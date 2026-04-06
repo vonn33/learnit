@@ -133,6 +133,16 @@ function applyOneHighlight(
         mark.appendChild(fragment);
         range.insertNode(mark);
       }
+
+      if (hl.note) {
+        const {border} = getHighlightColorForTags(hl.tagIds, tags);
+        const dot = document.createElement('span');
+        dot.className = 'handbook-note-dot';
+        dot.dataset.highlightId = hl.id;
+        dot.style.background = border;
+        mark.insertAdjacentElement('afterend', dot);
+      }
+
       return; // Apply each highlight once
     }
     node = walker.nextNode() as Text | null;

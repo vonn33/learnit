@@ -173,3 +173,26 @@ mark.handbook-highlight:hover {
 
 .prose strong { font-weight: 600; }
 .prose em { font-style: italic; }
+
+/* ── Annotation rendering ── */
+mark.handbook-highlight {
+  cursor: pointer;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+mark.handbook-highlight.ring-2 {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+span.handbook-note-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  vertical-align: super;
+  margin-left: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
