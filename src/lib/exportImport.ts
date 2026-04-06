@@ -10,13 +10,17 @@ import {
   saveReadingProgress,
   getDiagramLayouts as loadDiagramLayouts,
 } from './storage';
+import { useAnnotationStore, type Annotation } from '@/store/annotationStore';
+import { useMapStore, type TopicMap } from '@/store/mapStore';
 
-export function exportData(): HandbookData {
+export function exportData(): HandbookData & { annotations: unknown; maps: unknown } {
   return {
     highlights: getHighlights(),
     tags: getTags(),
     diagramLayouts: getDiagramLayouts(),
     readingProgress: getReadingProgress(),
+    annotations: useAnnotationStore.getState().annotations,
+    maps: useMapStore.getState().maps,
   };
 }
 
@@ -65,6 +69,31 @@ export function importData(
         saveDiagramLayout(pageId, layout);
       }
     }
+  }
+
+  // Restore annotation store
+  const rawData = data as Record<string, unknown>;
+  if (rawData.annotations && Array.isArray(rawData.annotations)) {
+    if (mode === 'replace') {
+      useAnnotationStore.getState().reset();
+    }
+    useAnnotationStore.setState((s) => ({
+      annotations: mode === 'replace'
+        ? rawData.annotations as Annotation[]
+        : [...s.annotations, ...(rawData.annotations as Annotation[])],
+    }));
+  }
+
+  // Restore map store
+  if (rawData.maps && typeof rawData.maps === 'object') {
+    if (mode === 'replace') {
+      useMapStore.getState().reset();
+    }
+    useMapStore.setState((s) => ({
+      maps: mode === 'replace'
+        ? rawData.maps as Record<string, TopicMap>
+        : { ...s.maps, ...(rawData.maps as Record<string, TopicMap>) },
+    }));
   }
 }
 

@@ -3,6 +3,8 @@ import {useHandbookStore} from '@/store';
 import {downloadExport, importData} from '@/lib/exportImport';
 import {saveHighlights, saveTags, saveUserDiagrams} from '@/lib/storage';
 import {Sun, Moon, Monitor, Download, Upload, Trash2, BookOpen} from 'lucide-react';
+import { useAnnotationStore } from '@/store/annotationStore';
+import { useMapStore } from '@/store/mapStore';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -26,6 +28,8 @@ export function SettingsPage() {
       saveHighlights([]);
       saveTags([]);
       saveUserDiagrams([]);
+      useAnnotationStore.getState().reset();
+      useMapStore.getState().reset();
       setClearConfirm(false);
     } else {
       setClearConfirm(true);
