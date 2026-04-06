@@ -17,6 +17,7 @@ import { useMapStore, type MapNode, type MapEdge } from '@/store/mapStore';
 import { generateScaffold } from '@/lib/mapScaffold';
 import manifest from '@/data/content-manifest.json';
 import { ConceptNode } from './ConceptNode';
+import { MapToolbar } from './MapToolbar';
 
 const nodeTypes = { concept: ConceptNode };
 
@@ -71,6 +72,7 @@ export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
     y: number;
     nodeId: string;
   } | null>(null);
+  const [snapToGrid, setSnapToGrid] = useState(false);
 
   // Initialize map from scaffold on first open
   useEffect(() => {
@@ -166,6 +168,7 @@ export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
 
   return (
     <div className="h-full w-full" onClick={() => setContextMenu(null)}>
+      <MapToolbar snapToGrid={snapToGrid} onToggleSnap={() => setSnapToGrid(!snapToGrid)} />
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -178,6 +181,8 @@ export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
         onPaneClick={() => setContextMenu(null)}
         onKeyDown={onKeyDown}
         nodeTypes={nodeTypes}
+        snapToGrid={snapToGrid}
+        snapGrid={[16, 16]}
         fitView
         proOptions={{ hideAttribution: true }}
       >
