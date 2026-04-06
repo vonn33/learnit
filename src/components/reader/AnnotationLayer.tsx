@@ -3,6 +3,7 @@ import {getHighlightsForPage, getTags} from '@/lib/storage';
 import {applyHighlightsToDOM} from '@/lib/highlights';
 import {HighlightPopover} from './HighlightPopover';
 import {NotePanel} from './NotePanel';
+import { useAnnotationStore } from '@/store/annotationStore';
 
 interface AnnotationLayerProps {
   pageUrl: string;
@@ -12,6 +13,7 @@ export function AnnotationLayer({pageUrl}: AnnotationLayerProps) {
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [markRect, setMarkRect] = useState<DOMRect | null>(null);
   const appliedRef = useRef(false);
+  const showAnnotations = useAnnotationStore((s) => s.showAnnotations);
 
   // Apply highlights to DOM after content renders
   useEffect(() => {
@@ -21,8 +23,19 @@ export function AnnotationLayer({pageUrl}: AnnotationLayerProps) {
     const tryApply = () => {
       const container = document.querySelector('article.prose') as HTMLElement | null;
       if (!container) return false;
-      const highlights = getHighlightsForPage(pageUrl);
-      if (highlights.length > 0) applyHighlightsToDOM(highlights, container, tags);
+
+      // Clear existing marks first
+      container.querySelectorAll('mark[data-highlight-id]').forEach((mark) => {
+        const parent = mark.parentNode;
+        while (mark.firstChild) parent?.insertBefore(mark.firstChild, mark);
+        parent?.removeChild(mark);
+        parent?.normalize();
+      });
+
+      if (showAnnotations) {
+        const highlights = getHighlightsForPage(pageUrl);
+        if (highlights.length > 0) applyHighlightsToDOM(highlights, container, tags);
+      }
       appliedRef.current = true;
       return true;
     };
@@ -42,7 +55,7 @@ export function AnnotationLayer({pageUrl}: AnnotationLayerProps) {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [pageUrl]);
+  }, [pageUrl, showAnnotations]);
 
   // Click on highlight mark → open NotePanel
   useEffect(() => {
