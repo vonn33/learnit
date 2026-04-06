@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Docusaurus boilerplate (not used by this Vite project)
+static/img/
+static/.DS_Store
+static/.nojekyll
+
+# Worktrees
+.worktrees
+
+# Claude Code
+.claude
