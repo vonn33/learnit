@@ -113,8 +113,8 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
         note,
         connectionUrl: '',
         anchorContext: buildAnchorContext(savedRange),
-        charOffsetStart: 0,
-        charOffsetEnd: 0,
+        charOffsetStart: 0, // required by type; not used for anchoring (anchorContext is used instead)
+        charOffsetEnd: 0,   // required by type; not used for anchoring (anchorContext is used instead)
       });
       const container = document.querySelector('article.prose') as HTMLElement | null;
       if (container) {

@@ -104,6 +104,13 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
     const tags = getTags();
     const container = document.querySelector('article.prose') as HTMLElement | null;
     if (container) {
+      // Strip existing marks before re-applying to avoid double-wrap
+      container.querySelectorAll('mark[data-highlight-id]').forEach((mark) => {
+        const parent = mark.parentNode;
+        while (mark.firstChild) parent?.insertBefore(mark.firstChild, mark);
+        parent?.removeChild(mark);
+        parent?.normalize();
+      });
       container.querySelectorAll('span.handbook-note-dot').forEach((dot) => dot.remove());
       const highlights = getHighlightsForPage(pageUrl);
       applyHighlightsToDOM(highlights, container, tags);

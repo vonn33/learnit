@@ -1,7 +1,6 @@
 import {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {getHighlights} from '@/lib/storage';
 import {clampToViewport} from '@/lib/positioning';
-import {useDelayedUnmount} from '@/lib/useDelayedUnmount';
 
 interface NoteTooltipProps {
   highlightId: string;
@@ -14,9 +13,6 @@ export function NoteTooltip({highlightId, anchorRect, onClose, onEdit}: NoteTool
   const highlight = getHighlights().find((h) => h.id === highlightId);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({top: -9999, left: -9999});
-  const [visible] = useState(true);
-  const shouldRender = useDelayedUnmount(visible, 100);
-
   useLayoutEffect(() => {
     if (!tooltipRef.current) return;
     const {offsetWidth, offsetHeight} = tooltipRef.current;
@@ -31,13 +27,22 @@ export function NoteTooltip({highlightId, anchorRect, onClose, onEdit}: NoteTool
   }, [anchorRect]);
 
   useEffect(() => {
+    let mounted = false;
     function onDocClick(e: MouseEvent) {
+      if (!mounted) return;
       if (tooltipRef.current && !tooltipRef.current.contains(e.target as Node)) {
         onClose();
       }
     }
-    setTimeout(() => document.addEventListener('mousedown', onDocClick), 0);
-    return () => document.removeEventListener('mousedown', onDocClick);
+    // setTimeout to avoid closing on the same click that opened the tooltip
+    const timer = setTimeout(() => {
+      mounted = true;
+      document.addEventListener('mousedown', onDocClick);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', onDocClick);
+    };
   }, [onClose]);
 
   useEffect(() => {
@@ -48,7 +53,7 @@ export function NoteTooltip({highlightId, anchorRect, onClose, onEdit}: NoteTool
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
-  if (!highlight?.note || !shouldRender) return null;
+  if (!highlight?.note) return null;
 
   return (
     <div

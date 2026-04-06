@@ -121,7 +121,6 @@ function applyOneHighlight(
       mark.className = 'handbook-highlight';
       mark.dataset.highlightId = hl.id;
       mark.dataset.annotationId = hl.id;
-      mark.style.backgroundColor = bg;
       mark.style.borderBottom = `2px solid ${border}`;
       mark.style.background = bg;
 
@@ -135,7 +134,6 @@ function applyOneHighlight(
       }
 
       if (hl.note) {
-        const {border} = getHighlightColorForTags(hl.tagIds, tags);
         const dot = document.createElement('span');
         dot.className = 'handbook-note-dot';
         dot.dataset.highlightId = hl.id;

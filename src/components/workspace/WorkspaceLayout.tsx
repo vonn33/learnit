@@ -1,6 +1,6 @@
 import {type ReactNode} from 'react';
 import {PaneHandle} from './PaneHandle';
-import {Maximize2, Minimize2, Columns2} from 'lucide-react';
+import {Maximize2, Columns2} from 'lucide-react';
 import {useWorkspaceStore} from '@/store/workspaceStore';
 
 interface WorkspaceLayoutProps {
@@ -42,7 +42,7 @@ export function WorkspaceLayout({left, right}: WorkspaceLayoutProps) {
           className="p-1 rounded hover:bg-muted text-foreground/60 hover:text-foreground"
           title="Focus map"
         >
-          <Minimize2 size={14} />
+          <Maximize2 size={14} />
         </button>
       </div>
 
