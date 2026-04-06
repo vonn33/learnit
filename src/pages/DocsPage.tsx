@@ -8,6 +8,7 @@ import {DataTable} from '@/components/mdx/DataTable';
 import {ConceptMap} from '@/components/mdx/ConceptMap';
 import {AnnotationLayer} from '@/components/reader/AnnotationLayer';
 import {AnnotationToggle} from '@/components/reader/AnnotationToggle';
+import {DocNav} from '@/components/reader/DocNav';
 import {WorkspaceLayout} from '@/components/workspace/WorkspaceLayout';
 import {MapCanvas} from '@/components/map/MapCanvas';
 import {StagingInbox} from '@/components/map/StagingInbox';
@@ -137,12 +138,6 @@ export function DocsPage() {
   return (
     <WorkspaceLayout
       left={
-        <div className="relative h-full">
-          <MapCanvas topicId={topicId} onNodeClick={handleMapNodeClick} />
-          <StagingInbox topicId={topicId} />
-        </div>
-      }
-      right={
         <div id="docs-content" className="h-full overflow-y-auto">
           <ProgressBar pageUrl={pathname} />
           <div className="flex justify-end px-4 pt-2">
@@ -157,7 +152,14 @@ export function DocsPage() {
               </article>
             </MDXProvider>
           </div>
+          <DocNav currentPath={pathname} />
           <AnnotationLayer pageUrl={pathname} topicId={topicId} />
+        </div>
+      }
+      right={
+        <div className="relative h-full">
+          <MapCanvas topicId={topicId} onNodeClick={handleMapNodeClick} />
+          <StagingInbox topicId={topicId} />
         </div>
       }
     />
