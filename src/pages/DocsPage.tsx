@@ -1,4 +1,4 @@
-import {lazy, Suspense, useEffect, useRef} from 'react';
+import {lazy, Suspense, useCallback, useEffect, useRef} from 'react';
 import {useLocation, Navigate} from 'react-router';
 import {MDXProvider} from '@mdx-js/react';
 import {Verdict} from '@/components/mdx/Verdict';
@@ -7,7 +7,12 @@ import {Compare} from '@/components/mdx/Compare';
 import {DataTable} from '@/components/mdx/DataTable';
 import {ConceptMap} from '@/components/mdx/ConceptMap';
 import {AnnotationLayer} from '@/components/reader/AnnotationLayer';
+import {AnnotationToggle} from '@/components/reader/AnnotationToggle';
+import {WorkspaceLayout} from '@/components/workspace/WorkspaceLayout';
+import {MapCanvas} from '@/components/map/MapCanvas';
+import {StagingInbox} from '@/components/map/StagingInbox';
 import {saveReadingProgress, getReadingProgress} from '@/lib/storage';
+import {useMapStore} from '@/store/mapStore';
 import manifest from '@/data/content-manifest.json';
 
 // Glob import all MDX files from local docs directory
@@ -92,6 +97,23 @@ export function DocsPage() {
 
   const moduleKey = getModuleKey(pathname);
 
+  // Extract topicId (category) from pathname: /docs/language-learning/...
+  const topicId = pathname.split('/')[2] ?? '';
+
+  const handleMapNodeClick = useCallback((nodeId: string) => {
+    const topicMap = useMapStore.getState().maps[topicId];
+    if (!topicMap) return;
+    const node = topicMap.nodes.find((n) => n.id === nodeId);
+    if (!node?.annotationId) return;
+
+    const mark = document.querySelector(`mark[data-annotation-id="${node.annotationId}"]`);
+    if (mark) {
+      mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      mark.classList.add('ring-2', 'ring-primary');
+      setTimeout(() => mark.classList.remove('ring-2', 'ring-primary'), 2000);
+    }
+  }, [topicId]);
+
   if (!moduleKey) {
     return (
       <div className="flex items-center justify-center h-full text-[var(--color-muted-foreground)] text-sm">
@@ -103,18 +125,31 @@ export function DocsPage() {
   const Content = lazy(modules[moduleKey] as () => Promise<{default: React.ComponentType}>);
 
   return (
-    <div id="docs-content" className="h-full overflow-y-auto">
-      <ProgressBar pageUrl={pathname} />
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        <MDXProvider components={MDX_COMPONENTS}>
-          <article className="prose">
-            <Suspense fallback={<div className="text-[var(--color-muted-foreground)] text-sm">Loading…</div>}>
-              <Content />
-            </Suspense>
-          </article>
-        </MDXProvider>
-      </div>
-      <AnnotationLayer pageUrl={pathname} />
-    </div>
+    <WorkspaceLayout
+      left={
+        <div className="relative h-full">
+          <MapCanvas topicId={topicId} onNodeClick={handleMapNodeClick} />
+          <StagingInbox topicId={topicId} />
+        </div>
+      }
+      right={
+        <div id="docs-content" className="h-full overflow-y-auto">
+          <ProgressBar pageUrl={pathname} />
+          <div className="flex justify-end px-4 pt-2">
+            <AnnotationToggle />
+          </div>
+          <div className="max-w-3xl mx-auto px-6 py-4">
+            <MDXProvider components={MDX_COMPONENTS}>
+              <article className="prose">
+                <Suspense fallback={<div className="text-[var(--color-muted-foreground)] text-sm">Loading…</div>}>
+                  <Content />
+                </Suspense>
+              </article>
+            </MDXProvider>
+          </div>
+          <AnnotationLayer pageUrl={pathname} topicId={topicId} />
+        </div>
+      }
+    />
   );
 }

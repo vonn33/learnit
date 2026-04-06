@@ -30,5 +30,6 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": false
   },
-  "include": ["src", "../learnit/docs/**/*.mdx"]
+  "include": ["src", "../learnit/docs/**/*.mdx"],
+  "exclude": ["src/__tests__"]
 }

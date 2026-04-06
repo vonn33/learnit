@@ -7,9 +7,10 @@ import { useAnnotationStore } from '@/store/annotationStore';
 
 interface AnnotationLayerProps {
   pageUrl: string;
+  topicId?: string;
 }
 
-export function AnnotationLayer({pageUrl}: AnnotationLayerProps) {
+export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [markRect, setMarkRect] = useState<DOMRect | null>(null);
   const appliedRef = useRef(false);
@@ -86,6 +87,7 @@ export function AnnotationLayer({pageUrl}: AnnotationLayerProps) {
     <>
       <HighlightPopover
         pageUrl={pageUrl}
+        topicId={topicId}
         onHighlightCreated={() => {
           const tags = getTags();
           const container = document.querySelector('article.prose') as HTMLElement | null;
