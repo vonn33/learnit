@@ -13,6 +13,7 @@ import * as path from 'path';
 import * as readline from 'readline';
 import * as os from 'os';
 import {execSync, spawnSync} from 'child_process';
+import { generateScaffold } from '../src/lib/mapScaffold';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const DOCS_DIR = path.join(ROOT, 'docs');
@@ -210,6 +211,18 @@ async function main() {
   }
 
   writeManifest(manifest as Record<string, unknown>);
+
+  // ── Generate map scaffold ─────────────────────────────────────────────────
+
+  const updatedManifest = readManifest();
+  const scaffold = generateScaffold(updatedManifest as Parameters<typeof generateScaffold>[0], projectId);
+  const scaffoldDir = path.join(ROOT, 'static', 'maps', projectId);
+  fs.mkdirSync(scaffoldDir, {recursive: true});
+  fs.writeFileSync(
+    path.join(scaffoldDir, 'scaffold.json'),
+    JSON.stringify(scaffold, null, 2),
+  );
+  console.log(`  → Map scaffold written to static/maps/${projectId}/scaffold.json`);
 
   // ── Summary ───────────────────────────────────────────────────────────────
 
