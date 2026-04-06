@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./src/__tests__/setup.ts'],
     globals: true,
+    exclude: ['node_modules', '.worktrees/**', 'dist'],
   },
   resolve: {
     alias: {
