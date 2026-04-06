@@ -120,6 +120,24 @@ export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
     [onNodeClick],
   );
 
+  // Listen for focus-map-node events from the reader (bi-directional linking)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { nodeId } = (e as CustomEvent).detail as { nodeId: string };
+      setNodes((nds) =>
+        nds.map((n) => ({
+          ...n,
+          className: n.id === nodeId ? 'ring-2 ring-primary animate-pulse' : '',
+        })),
+      );
+      setTimeout(() => {
+        setNodes((nds) => nds.map((n) => ({ ...n, className: '' })));
+      }, 2000);
+    };
+    window.addEventListener('focus-map-node', handler);
+    return () => window.removeEventListener('focus-map-node', handler);
+  }, [setNodes]);
+
   return (
     <div className="h-full w-full">
       <ReactFlow

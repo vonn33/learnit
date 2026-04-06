@@ -57,7 +57,7 @@ export function AnnotationLayer({pageUrl}: AnnotationLayerProps) {
     };
   }, [pageUrl, showAnnotations]);
 
-  // Click on highlight mark → open NotePanel
+  // Click on highlight mark → open NotePanel + dispatch bi-directional focus event
   useEffect(() => {
     function onHighlightClick(e: MouseEvent) {
       const target = (e.target as HTMLElement).closest('mark[data-highlight-id]') as HTMLElement | null;
@@ -66,6 +66,17 @@ export function AnnotationLayer({pageUrl}: AnnotationLayerProps) {
       if (!id) return;
       setMarkRect(target.getBoundingClientRect());
       setActiveHighlightId(id);
+
+      // Check if this highlight has a linked map node
+      const annotationId = target.dataset.annotationId;
+      if (annotationId) {
+        const annotation = useAnnotationStore.getState().annotations.find((a) => a.id === annotationId);
+        if (annotation?.mapNodeId) {
+          window.dispatchEvent(
+            new CustomEvent('focus-map-node', { detail: { nodeId: annotation.mapNodeId } }),
+          );
+        }
+      }
     }
     document.addEventListener('click', onHighlightClick);
     return () => document.removeEventListener('click', onHighlightClick);
