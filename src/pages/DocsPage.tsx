@@ -1,4 +1,4 @@
-import {lazy, Suspense, useCallback, useEffect, useRef} from 'react';
+import {lazy, Suspense, useCallback, useEffect, useRef, type ComponentType, type LazyExoticComponent} from 'react';
 import {useLocation, Navigate} from 'react-router';
 import {MDXProvider} from '@mdx-js/react';
 import {Verdict} from '@/components/mdx/Verdict';
@@ -17,6 +17,14 @@ import manifest from '@/data/content-manifest.json';
 
 // Glob import all MDX files from local docs directory
 const modules = import.meta.glob('/docs/**/*.mdx');
+
+// Create lazy components once at module level — stable references, never recreated
+const lazyModules: Record<string, LazyExoticComponent<ComponentType>> = Object.fromEntries(
+  Object.entries(modules).map(([key, factory]) => [
+    key,
+    lazy(factory as () => Promise<{default: ComponentType}>),
+  ]),
+);
 
 const MDX_COMPONENTS = {
   Verdict,
@@ -91,15 +99,10 @@ export function DocsPage() {
   const location = useLocation();
   const pathname = location.pathname;
 
-  if (pathname === '/docs' || pathname === '/docs/') {
-    return <Navigate to={getFirstDocPath()} replace />;
-  }
-
-  const moduleKey = getModuleKey(pathname);
-
   // Extract topicId (category) from pathname: /docs/language-learning/...
   const topicId = pathname.split('/')[2] ?? '';
 
+  // ALL hooks must be called before any early returns
   const handleMapNodeClick = useCallback((nodeId: string) => {
     const topicMap = useMapStore.getState().maps[topicId];
     if (!topicMap) return;
@@ -114,15 +117,22 @@ export function DocsPage() {
     }
   }, [topicId]);
 
-  if (!moduleKey) {
+  const moduleKey = getModuleKey(pathname);
+  const Content = moduleKey ? lazyModules[moduleKey] : null;
+
+  // Redirect bare /docs or incomplete /docs/<category>[/<section>] to first available doc
+  const segments = pathname.replace(/^\/docs\/?/, '').split('/').filter(Boolean);
+  if (segments.length < 3) {
+    return <Navigate to={getFirstDocPath()} replace />;
+  }
+
+  if (!moduleKey || !Content) {
     return (
       <div className="flex items-center justify-center h-full text-[var(--color-muted-foreground)] text-sm">
         Page not found. Check the sidebar for available content.
       </div>
     );
   }
-
-  const Content = lazy(modules[moduleKey] as () => Promise<{default: React.ComponentType}>);
 
   return (
     <WorkspaceLayout

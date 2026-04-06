@@ -7,7 +7,7 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [
-    {enforce: 'pre', ...mdx({remarkPlugins: [remarkGfm]})},
+    {enforce: 'pre', ...mdx({remarkPlugins: [remarkGfm], providerImportSource: '@mdx-js/react'})},
     react({include: /\.(jsx|js|mdx|md|tsx|ts)$/}),
     tailwindcss(),
   ],

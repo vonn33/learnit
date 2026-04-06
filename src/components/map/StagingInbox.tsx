@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { ChevronDown, ChevronUp, GripVertical, X } from 'lucide-react';
 import { useMapStore } from '@/store/mapStore';
 
@@ -8,7 +8,11 @@ interface StagingInboxProps {
 
 export function StagingInbox({ topicId }: StagingInboxProps) {
   const [expanded, setExpanded] = useState(true);
-  const stagedNodes = useMapStore((s) => s.getStagedNodes(topicId));
+  const topicMap = useMapStore((s) => s.maps[topicId]);
+  const stagedNodes = useMemo(
+    () => (topicMap?.nodes ?? []).filter((n) => n.status === 'staged'),
+    [topicMap],
+  );
   const updateNode = useMapStore((s) => s.updateNode);
   const removeNode = useMapStore((s) => s.removeNode);
 
