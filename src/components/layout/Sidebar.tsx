@@ -1,7 +1,8 @@
 import {useState} from 'react';
 import {NavLink} from 'react-router';
-import {ChevronDown, ChevronRight} from 'lucide-react';
+import {ChevronDown, ChevronRight, ChevronLeft} from 'lucide-react';
 import manifest from '@/data/content-manifest.json';
+import {useWorkspaceStore} from '@/store/workspaceStore';
 
 type DocEntry = string;
 type Section = {label: string; link: string; docs: DocEntry[]};
@@ -88,16 +89,35 @@ function CategoryItem({categoryKey, category}: {categoryKey: string; category: C
 }
 
 export function Sidebar({className = ''}: {className?: string}) {
+  const collapsed = useWorkspaceStore((s) => s.sidebarCollapsed);
+  const setSidebarCollapsed = useWorkspaceStore((s) => s.setSidebarCollapsed);
+
   return (
     <aside
       className={[
-        'w-64 shrink-0 overflow-y-auto border-r bg-[var(--color-card)] py-3',
+        'shrink-0 overflow-y-auto border-r bg-[var(--color-card)] py-3 flex flex-col transition-all duration-200',
+        collapsed ? 'w-12' : 'w-64',
         className,
       ].join(' ')}
     >
-      {Object.entries(typedManifest).map(([key, category]) => (
-        <CategoryItem key={key} categoryKey={key} category={category} />
-      ))}
+      {!collapsed && (
+        <div className="flex-1">
+          {Object.entries(typedManifest).map(([key, category]) => (
+            <CategoryItem key={key} categoryKey={key} category={category} />
+          ))}
+        </div>
+      )}
+
+      <div className={`mt-auto pt-2 border-t border-[var(--color-border)] flex ${collapsed ? 'justify-center' : 'justify-end px-2'}`}>
+        <button
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          onClick={() => setSidebarCollapsed(!collapsed)}
+          className="p-1.5 rounded hover:bg-[var(--color-accent)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
+      </div>
     </aside>
   );
 }
