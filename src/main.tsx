@@ -4,6 +4,7 @@ import {createRoot} from 'react-dom/client';
 import {BrowserRouter, Routes, Route, Navigate} from 'react-router';
 import {ThemeProvider} from '@/components/layout/ThemeProvider';
 import {Shell} from '@/components/layout/Shell';
+import {HomePage} from '@/pages/HomePage';
 import {DocsPage} from '@/pages/DocsPage';
 import {HighlightsPage} from '@/pages/HighlightsPage';
 import {DiagramsPage} from '@/pages/DiagramsPage';
@@ -15,7 +16,7 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <Routes>
           <Route element={<Shell />}>
-            <Route index element={<Navigate to="/docs" replace />} />
+            <Route index element={<HomePage />} />
             <Route path="docs/*" element={<DocsPage />} />
             <Route path="highlights" element={<HighlightsPage />} />
             <Route path="diagrams/*" element={<DiagramsPage />} />

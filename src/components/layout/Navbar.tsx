@@ -29,7 +29,7 @@ export function Navbar({onSearchOpen}: {onSearchOpen: () => void}) {
   return (
     <header className="h-12 border-b flex items-center px-4 gap-3 shrink-0 bg-[var(--color-card)]">
       <Link
-        to="/docs"
+        to="/"
         className="flex items-center gap-2 font-semibold text-sm mr-2 text-[var(--color-foreground)] no-underline"
       >
         <BookOpen size={16} />
