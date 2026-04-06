@@ -7,13 +7,18 @@ import {
 } from '@/lib/highlights';
 import {clampToViewport} from '@/lib/positioning';
 import {useDelayedUnmount} from '@/lib/useDelayedUnmount';
+import { useMapStore } from '@/store/mapStore';
+import { useAnnotationStore } from '@/store/annotationStore';
+import { NodePicker } from '@/components/map/NodePicker';
+import { Zap, MapPin, Link2 } from 'lucide-react';
 
 interface HighlightPopoverProps {
   pageUrl: string;
   onHighlightCreated: () => void;
+  topicId?: string;
 }
 
-export function HighlightPopover({pageUrl, onHighlightCreated}: HighlightPopoverProps) {
+export function HighlightPopover({pageUrl, onHighlightCreated, topicId = ''}: HighlightPopoverProps) {
   const [visible, setVisible] = useState(false);
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [pos, setPos] = useState({top: -9999, left: -9999});
@@ -24,7 +29,10 @@ export function HighlightPopover({pageUrl, onHighlightCreated}: HighlightPopover
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [quickNote, setQuickNote] = useState('');
   const [showQuickNote, setShowQuickNote] = useState(false);
+  const [showNodePicker, setShowNodePicker] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const addAnnotation = useAnnotationStore((s) => s.addAnnotation);
+  const addNode = useMapStore((s) => s.addNode);
   const quickNoteRef = useRef<HTMLTextAreaElement>(null);
   const shouldRender = useDelayedUnmount(visible, 100);
 
@@ -107,6 +115,66 @@ export function HighlightPopover({pageUrl, onHighlightCreated}: HighlightPopover
   useEffect(() => {
     if (showQuickNote) quickNoteRef.current?.focus();
   }, [showQuickNote]);
+
+  function handleQuickCapture() {
+    if (!topicId || !selectedText) return;
+    const annotationId = addAnnotation({
+      docId: pageUrl,
+      position: { start: 0, end: 0 },
+      type: 'quick-capture',
+      text: selectedText,
+    });
+    const nodeId = addNode(topicId, {
+      label: selectedText.slice(0, 60),
+      type: 'concept',
+      status: 'staged',
+      annotationId,
+    });
+    useAnnotationStore.getState().updateAnnotation(annotationId, { mapNodeId: nodeId });
+    window.getSelection()?.removeAllRanges();
+    setVisible(false);
+  }
+
+  function handleAddAsNode() {
+    if (!topicId || !selectedText) return;
+    const annotationId = addAnnotation({
+      docId: pageUrl,
+      position: { start: 0, end: 0 },
+      type: 'highlight',
+      text: selectedText,
+    });
+    const nodeId = addNode(topicId, {
+      label: selectedText.slice(0, 60),
+      type: 'concept',
+      status: 'placed',
+      position: { x: 200, y: 200 },
+      annotationId,
+    });
+    useAnnotationStore.getState().updateAnnotation(annotationId, { mapNodeId: nodeId });
+    window.getSelection()?.removeAllRanges();
+    setVisible(false);
+    onHighlightCreated();
+  }
+
+  function handleConnectToNode() {
+    setShowNodePicker(true);
+  }
+
+  function handleNodeSelected(nodeId: string) {
+    if (!topicId || !selectedText) return;
+    const annotationId = addAnnotation({
+      docId: pageUrl,
+      position: { start: 0, end: 0 },
+      type: 'highlight',
+      text: selectedText,
+      mapNodeId: nodeId,
+    });
+    useMapStore.getState().updateNode(topicId, nodeId, { annotationId });
+    setShowNodePicker(false);
+    window.getSelection()?.removeAllRanges();
+    setVisible(false);
+    onHighlightCreated();
+  }
 
   function toggleTag(id: string) {
     setSelectedTagIds((prev) =>
@@ -229,6 +297,46 @@ export function HighlightPopover({pageUrl, onHighlightCreated}: HighlightPopover
           Cancel
         </button>
       </div>
+
+      {topicId && (
+        <>
+          <div className="flex gap-1 border-t border-[var(--color-border)] pt-1.5 mt-0.5">
+            <button
+              onClick={handleQuickCapture}
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-muted/50 hover:bg-muted text-foreground/70 hover:text-foreground"
+              title="Quick capture — flag as important"
+            >
+              <Zap size={12} />
+              Capture
+            </button>
+            <button
+              onClick={handleAddAsNode}
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-muted/50 hover:bg-muted text-foreground/70 hover:text-foreground"
+              title="Add as concept node"
+            >
+              <MapPin size={12} />
+              Node
+            </button>
+            <button
+              onClick={handleConnectToNode}
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-muted/50 hover:bg-muted text-foreground/70 hover:text-foreground"
+              title="Connect to existing node"
+            >
+              <Link2 size={12} />
+              Connect
+            </button>
+          </div>
+          {showNodePicker && (
+            <div className="mt-1">
+              <NodePicker
+                topicId={topicId}
+                onSelect={handleNodeSelected}
+                onClose={() => setShowNodePicker(false)}
+              />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
