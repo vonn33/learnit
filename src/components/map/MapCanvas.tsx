@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -63,6 +63,14 @@ export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
   const loadScaffold = useMapStore((s) => s.loadScaffold);
   const updateNodePositions = useMapStore((s) => s.updateNodePositions);
   const storeAddEdge = useMapStore((s) => s.addEdge);
+  const updateNode = useMapStore((s) => s.updateNode);
+  const removeNode = useMapStore((s) => s.removeNode);
+
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    nodeId: string;
+  } | null>(null);
 
   // Initialize map from scaffold on first open
   useEffect(() => {
@@ -120,6 +128,24 @@ export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
     [onNodeClick],
   );
 
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
+    },
+    [],
+  );
+
+  const onKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        const selectedNodes = nodes.filter((n) => n.selected);
+        selectedNodes.forEach((n) => removeNode(topicId, n.id));
+      }
+    },
+    [nodes, removeNode, topicId],
+  );
+
   // Listen for focus-map-node events from the reader (bi-directional linking)
   useEffect(() => {
     const handler = (e: Event) => {
@@ -139,7 +165,7 @@ export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
   }, [setNodes]);
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full" onClick={() => setContextMenu(null)}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -148,6 +174,9 @@ export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
         onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
         onNodeClick={handleNodeClick}
+        onNodeContextMenu={onNodeContextMenu}
+        onPaneClick={() => setContextMenu(null)}
+        onKeyDown={onKeyDown}
         nodeTypes={nodeTypes}
         fitView
         proOptions={{ hideAttribution: true }}
@@ -155,6 +184,34 @@ export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
         <Controls showInteractive={false} />
       </ReactFlow>
+
+      {contextMenu && (
+        <div
+          className="fixed bg-card border border-border rounded-lg shadow-lg py-1 z-50 min-w-[140px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => {
+              const label = prompt('Rename node:', '');
+              if (label) updateNode(topicId, contextMenu.nodeId, { label });
+              setContextMenu(null);
+            }}
+            className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted"
+          >
+            Rename
+          </button>
+          <button
+            onClick={() => {
+              removeNode(topicId, contextMenu.nodeId);
+              setContextMenu(null);
+            }}
+            className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted text-destructive"
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </div>
   );
 }
