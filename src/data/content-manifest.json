@@ -1,0 +1,25 @@
+{
+  "language-learning": {
+    "label": "Language Learning",
+    "link": "language-learning/index",
+    "sections": {
+      "quick-references": {
+        "label": "Quick References",
+        "link": "language-learning/quick-references/index",
+        "docs": ["fluent-forever", "nation"]
+      },
+      "handbook": {
+        "label": "Two Maps, One Territory",
+        "link": "language-learning/handbook/index",
+        "docs": [
+          "part-1a-fluent-forever",
+          "part-1b-nation",
+          "part-2-head-to-head",
+          "part-3-synthesis",
+          "part-4-evaluation",
+          "appendix"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "nodes": [
+    {"id": "conditions", "position": {"x": 320, "y": 40}, "data": {"label": "Learning Conditions"}, "type": "default"},
+    {"id": "srs", "position": {"x": 80, "y": 160}, "data": {"label": "Spaced Retrieval"}, "type": "default"},
+    {"id": "phonology", "position": {"x": 310, "y": 160}, "data": {"label": "Phonological Precision"}, "type": "default"},
+    {"id": "frequency", "position": {"x": 540, "y": 160}, "data": {"label": "Frequency Priority"}, "type": "default"},
+    {"id": "output", "position": {"x": 80, "y": 290}, "data": {"label": "Output Practice"}, "type": "default"},
+    {"id": "fluency", "position": {"x": 310, "y": 290}, "data": {"label": "Fluency Strand"}, "type": "default"},
+    {"id": "encoding", "position": {"x": 540, "y": 290}, "data": {"label": "Deep Encoding"}, "type": "default"},
+    {"id": "motivation", "position": {"x": 310, "y": 420}, "data": {"label": "Autonomous Motivation"}}
+  ],
+  "edges": [
+    {"id": "e1", "source": "conditions", "target": "srs", "label": "requires"},
+    {"id": "e2", "source": "conditions", "target": "phonology", "label": "requires"},
+    {"id": "e3", "source": "conditions", "target": "frequency", "label": "requires"},
+    {"id": "e4", "source": "srs", "target": "fluency", "label": "enables"},
+    {"id": "e5", "source": "output", "target": "fluency", "label": "builds"},
+    {"id": "e6", "source": "encoding", "target": "srs", "label": "deepens"},
+    {"id": "e7", "source": "motivation", "target": "conditions", "label": "sustains"}
+  ]
+}
