@@ -1,17 +1,18 @@
-import { useState, type ReactNode } from 'react';
-import { PaneHandle } from './PaneHandle';
-import { Maximize2, Minimize2, Columns2 } from 'lucide-react';
-
-type PaneMode = 'split' | 'focus-left' | 'focus-right';
+import {type ReactNode} from 'react';
+import {PaneHandle} from './PaneHandle';
+import {Maximize2, Minimize2, Columns2} from 'lucide-react';
+import {useWorkspaceStore} from '@/store/workspaceStore';
 
 interface WorkspaceLayoutProps {
   left: ReactNode;
   right: ReactNode;
 }
 
-export function WorkspaceLayout({ left, right }: WorkspaceLayoutProps) {
-  const [mode, setMode] = useState<PaneMode>('split');
-  const [splitPercent, setSplitPercent] = useState(40);
+export function WorkspaceLayout({left, right}: WorkspaceLayoutProps) {
+  const mode = useWorkspaceStore((s) => s.mode);
+  const splitPercent = useWorkspaceStore((s) => s.splitPercent);
+  const setMode = useWorkspaceStore((s) => s.setMode);
+  const setSplitPercent = useWorkspaceStore((s) => s.setSplitPercent);
 
   const isLeftCollapsed = mode === 'focus-right';
   const isRightCollapsed = mode === 'focus-left';
@@ -20,10 +21,10 @@ export function WorkspaceLayout({ left, right }: WorkspaceLayoutProps) {
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-1 px-2 py-1 border-b border-border shrink-0">
         <button
-          aria-label="Focus map"
+          aria-label="Focus reader"
           onClick={() => setMode(mode === 'focus-left' ? 'split' : 'focus-left')}
           className="p-1 rounded hover:bg-muted text-foreground/60 hover:text-foreground"
-          title="Focus map"
+          title="Focus reader"
         >
           <Maximize2 size={14} />
         </button>
@@ -36,10 +37,10 @@ export function WorkspaceLayout({ left, right }: WorkspaceLayoutProps) {
           <Columns2 size={14} />
         </button>
         <button
-          aria-label="Focus reader"
+          aria-label="Focus map"
           onClick={() => setMode(mode === 'focus-right' ? 'split' : 'focus-right')}
           className="p-1 rounded hover:bg-muted text-foreground/60 hover:text-foreground"
-          title="Focus reader"
+          title="Focus map"
         >
           <Minimize2 size={14} />
         </button>
