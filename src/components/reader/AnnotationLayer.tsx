@@ -83,7 +83,11 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
         setMarkRect(mark.getBoundingClientRect());
         setActiveHighlightId(id);
         setActiveNoteId(null);
-        setActiveAnnotationId(mark.dataset.annotationId ?? null);
+        const rawAnnotId = mark.dataset.annotationId ?? null;
+        const annotExistsInStore = rawAnnotId
+          ? useAnnotationStore.getState().annotations.some((a) => a.id === rawAnnotId)
+          : false;
+        setActiveAnnotationId(annotExistsInStore ? rawAnnotId : null);
 
         const annotationId = mark.dataset.annotationId;
         if (annotationId) {

@@ -1,5 +1,5 @@
 import {lazy, Suspense, useCallback, useEffect, useRef, type ComponentType, type LazyExoticComponent} from 'react';
-import {useLocation, Navigate} from 'react-router';
+import {useLocation, Navigate, useNavigate} from 'react-router';
 import {MDXProvider} from '@mdx-js/react';
 import {Verdict} from '@/components/mdx/Verdict';
 import {Callout} from '@/components/mdx/Callout';
@@ -45,17 +45,27 @@ function getModuleKey(pathname: string): string | null {
   return modules[candidate] ? candidate : null;
 }
 
+export function getFirstDocPathForTopic(topicId: string): string | null {
+  const typedManifest = manifest as Record<
+    string,
+    {sections: Record<string, {docs: string[]}>}
+  >;
+  const catData = typedManifest[topicId];
+  if (!catData) return null;
+  for (const [sec, secData] of Object.entries(catData.sections)) {
+    if (secData.docs[0]) return `/docs/${topicId}/${sec}/${secData.docs[0]}`;
+  }
+  return null;
+}
+
 function getFirstDocPath(): string {
   const typedManifest = manifest as Record<
     string,
     {sections: Record<string, {docs: string[]}>}
   >;
-  for (const [cat, catData] of Object.entries(typedManifest)) {
-    for (const [sec, secData] of Object.entries(catData.sections)) {
-      if (secData.docs[0]) {
-        return `/docs/${cat}/${sec}/${secData.docs[0]}`;
-      }
-    }
+  for (const [cat] of Object.entries(typedManifest)) {
+    const path = getFirstDocPathForTopic(cat);
+    if (path) return path;
   }
   return '/docs';
 }
@@ -98,6 +108,7 @@ function ProgressBar({pageUrl}: {pageUrl: string}) {
 
 export function DocsPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const pathname = location.pathname;
 
   // Extract topicId (category) from pathname: /docs/language-learning/...
@@ -117,6 +128,18 @@ export function DocsPage() {
       setTimeout(() => mark.classList.remove('ring-2', 'ring-primary'), 2000);
     }
   }, [topicId]);
+
+  const handleMapNodeDoubleClick = useCallback(
+    (nodeId: string) => {
+      const topicMap = useMapStore.getState().maps[topicId];
+      if (!topicMap) return;
+      const node = topicMap.nodes.find((n) => n.id === nodeId);
+      if (!node?.linkedMapId) return;
+      const path = getFirstDocPathForTopic(node.linkedMapId);
+      if (path) navigate(path);
+    },
+    [topicId, navigate],
+  );
 
   const moduleKey = getModuleKey(pathname);
   const Content = moduleKey ? lazyModules[moduleKey] : null;
@@ -158,7 +181,7 @@ export function DocsPage() {
       }
       right={
         <div className="relative h-full">
-          <MapCanvas topicId={topicId} onNodeClick={handleMapNodeClick} />
+          <MapCanvas topicId={topicId} onNodeClick={handleMapNodeClick} onNodeDoubleClick={handleMapNodeDoubleClick} />
           <StagingInbox topicId={topicId} />
         </div>
       }

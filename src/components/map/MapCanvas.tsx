@@ -56,9 +56,10 @@ function toFlowEdges(mapEdges: MapEdge[]): Edge[] {
 interface MapCanvasProps {
   topicId: string;
   onNodeClick?: (nodeId: string) => void;
+  onNodeDoubleClick?: (nodeId: string) => void;
 }
 
-export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
+export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvasProps) {
   const maps = useMapStore((s) => s.maps);
   const initMap = useMapStore((s) => s.initMap);
   const loadScaffold = useMapStore((s) => s.loadScaffold);
@@ -130,6 +131,13 @@ export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
     [onNodeClick],
   );
 
+  const handleNodeDoubleClick = useCallback(
+    (_: unknown, node: Node) => {
+      onNodeDoubleClick?.(node.id);
+    },
+    [onNodeDoubleClick],
+  );
+
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       event.preventDefault();
@@ -177,6 +185,7 @@ export function MapCanvas({ topicId, onNodeClick }: MapCanvasProps) {
         onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
         onNodeClick={handleNodeClick}
+        onNodeDoubleClick={handleNodeDoubleClick}
         onNodeContextMenu={onNodeContextMenu}
         onPaneClick={() => setContextMenu(null)}
         onKeyDown={onKeyDown}
