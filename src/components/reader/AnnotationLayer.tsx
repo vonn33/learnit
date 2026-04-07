@@ -13,6 +13,7 @@ interface AnnotationLayerProps {
 
 export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
+  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
   const [markRect, setMarkRect] = useState<DOMRect | null>(null);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [noteDotRect, setNoteDotRect] = useState<DOMRect | null>(null);
@@ -82,6 +83,7 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
         setMarkRect(mark.getBoundingClientRect());
         setActiveHighlightId(id);
         setActiveNoteId(null);
+        setActiveAnnotationId(mark.dataset.annotationId ?? null);
 
         const annotationId = mark.dataset.annotationId;
         if (annotationId) {
@@ -127,9 +129,14 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
       {activeHighlightId && (
         <NotePanel
           highlightId={activeHighlightId}
+          annotationId={activeAnnotationId ?? undefined}
+          topicId={topicId}
           anchorRect={markRect}
           tags={getTags()}
-          onClose={() => setActiveHighlightId(null)}
+          onClose={() => {
+            setActiveHighlightId(null);
+            setActiveAnnotationId(null);
+          }}
           onDelete={(id) => {
             const mark = document.querySelector(`mark[data-highlight-id="${id}"]`);
             if (mark) {
