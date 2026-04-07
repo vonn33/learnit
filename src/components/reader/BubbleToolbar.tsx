@@ -189,7 +189,7 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
     onHighlightCreated();
   }
 
-  const {bg: previewBg} = getHighlightColorForTags(
+  const {bg: previewBg, border: previewBorder} = getHighlightColorForTags(
     selectedTagId ? [selectedTagId] : [],
     tags,
   );
@@ -239,6 +239,23 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
         >
           Highlight
         </button>
+
+        {selectedTagId && (
+          <button
+            onMouseDown={(e) => {
+              e.preventDefault();
+              doHighlight('');
+            }}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-muted)] text-xs font-medium text-[var(--color-foreground)] transition-colors"
+            title="Tag & Highlight (Shift+Enter)"
+          >
+            <span
+              className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0"
+              style={{background: previewBorder}}
+            />
+            Tag &amp; Highlight
+          </button>
+        )}
 
         {/* Note */}
         <button
