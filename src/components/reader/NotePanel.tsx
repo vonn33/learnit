@@ -2,16 +2,21 @@ import {useEffect, useRef, useState} from 'react';
 import {type Tag, getHighlights} from '@/lib/storage';
 import {updateHighlight, deleteHighlight, hexToRgba} from '@/lib/highlights';
 import {X, Check} from 'lucide-react';
+import {useAnnotationStore} from '@/store/annotationStore';
+import {useMapStore} from '@/store/mapStore';
+import {NodePicker} from '@/components/map/NodePicker';
 
 interface NotePanelProps {
   highlightId: string;
+  annotationId?: string;
+  topicId?: string;
   anchorRect: DOMRect | null;
   tags: Tag[];
   onClose: () => void;
   onDelete: (id: string) => void;
 }
 
-export function NotePanel({highlightId, anchorRect: _anchorRect, tags, onClose, onDelete}: NotePanelProps) {
+export function NotePanel({highlightId, annotationId, topicId, anchorRect: _anchorRect, tags, onClose, onDelete}: NotePanelProps) {
   const [highlight, setHighlight] = useState(() =>
     getHighlights().find((h) => h.id === highlightId) ?? null,
   );
@@ -21,6 +26,12 @@ export function NotePanel({highlightId, anchorRect: _anchorRect, tags, onClose, 
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showNodePicker, setShowNodePicker] = useState(false);
+  const [mapNodeId, setMapNodeId] = useState<string | null>(() =>
+    annotationId
+      ? (useAnnotationStore.getState().annotations.find((a) => a.id === annotationId)?.mapNodeId ?? null)
+      : null,
+  );
 
   useEffect(() => {
     const hl = getHighlights().find((h) => h.id === highlightId) ?? null;
@@ -57,6 +68,21 @@ export function NotePanel({highlightId, anchorRect: _anchorRect, tags, onClose, 
     setTimeout(() => setSavedAt(0), 1500);
   }
 
+  function handleConnect(nodeId: string) {
+    if (!annotationId || !topicId) return;
+    useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
+    useMapStore.getState().updateNode(topicId, nodeId, {annotationId});
+    setMapNodeId(nodeId);
+    setShowNodePicker(false);
+  }
+
+  function handleDisconnect() {
+    if (!annotationId || !topicId || !mapNodeId) return;
+    useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: undefined});
+    useMapStore.getState().updateNode(topicId, mapNodeId, {annotationId: undefined});
+    setMapNodeId(null);
+  }
+
   function handleDeleteClick() {
     if (deleteConfirm) {
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
@@ -67,6 +93,10 @@ export function NotePanel({highlightId, anchorRect: _anchorRect, tags, onClose, 
       deleteTimerRef.current = setTimeout(() => setDeleteConfirm(false), 3000);
     }
   }
+
+  const connectedNodeLabel = useMapStore(
+    (s) => (mapNodeId && topicId ? (s.maps[topicId]?.nodes.find((n) => n.id === mapNodeId)?.label ?? null) : null),
+  );
 
   if (!highlight) return null;
 
@@ -138,6 +168,42 @@ export function NotePanel({highlightId, anchorRect: _anchorRect, tags, onClose, 
           </span>
         )}
       </div>
+
+      {/* Map Node Connection */}
+      {annotationId && topicId && (
+        <div className="px-4 pb-3">
+          <label className="block text-[10px] uppercase tracking-wider text-[var(--color-muted-foreground)] font-semibold mb-1.5">
+            Map Node
+          </label>
+          {mapNodeId && connectedNodeLabel ? (
+            <div className="flex items-center gap-2">
+              <span className="flex-1 text-xs text-[var(--color-foreground)] bg-[var(--color-muted)] rounded px-3 py-2 truncate">
+                {connectedNodeLabel}
+              </span>
+              <button
+                onClick={handleDisconnect}
+                className="p-1 rounded text-[var(--color-muted-foreground)] hover:text-destructive transition-colors shrink-0"
+                aria-label="Disconnect node"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : showNodePicker ? (
+            <NodePicker
+              topicId={topicId}
+              onSelect={handleConnect}
+              onClose={() => setShowNodePicker(false)}
+            />
+          ) : (
+            <button
+              onClick={() => setShowNodePicker(true)}
+              className="w-full text-left text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] bg-[var(--color-muted)] rounded px-3 py-2 transition-colors"
+            >
+              Connect to map node →
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Link */}
       <div className="px-4 pb-3">
