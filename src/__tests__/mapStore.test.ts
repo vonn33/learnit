@@ -199,16 +199,16 @@ describe('confidence states', () => {
 });
 
 describe('path highlighting (neighbor computation)', () => {
-  it('finds direct neighbors via outgoing and incoming edges', () => {
-    function getNeighborIds(nodeId: string, edges: Array<{ source: string; target: string }>): Set<string> {
-      const ids = new Set<string>();
-      for (const e of edges) {
-        if (e.source === nodeId) ids.add(e.target);
-        if (e.target === nodeId) ids.add(e.source);
-      }
-      return ids;
+  function getNeighborIds(nodeId: string, edges: Array<{ source: string; target: string }>): Set<string> {
+    const ids = new Set<string>();
+    for (const e of edges) {
+      if (e.source === nodeId) ids.add(e.target);
+      if (e.target === nodeId) ids.add(e.source);
     }
+    return ids;
+  }
 
+  it('finds direct neighbors via outgoing and incoming edges', () => {
     const edges = [
       { source: 'a', target: 'b' },
       { source: 'b', target: 'c' },
@@ -223,15 +223,6 @@ describe('path highlighting (neighbor computation)', () => {
   });
 
   it('returns empty set for an isolated node', () => {
-    function getNeighborIds(nodeId: string, edges: Array<{ source: string; target: string }>): Set<string> {
-      const ids = new Set<string>();
-      for (const e of edges) {
-        if (e.source === nodeId) ids.add(e.target);
-        if (e.target === nodeId) ids.add(e.source);
-      }
-      return ids;
-    }
-
     expect(getNeighborIds('x', [])).toEqual(new Set());
   });
 });
