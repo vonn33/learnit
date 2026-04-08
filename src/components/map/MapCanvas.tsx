@@ -32,6 +32,7 @@ function toFlowNodes(mapNodes: MapNode[]): Node[] {
         label: n.label,
         nodeType: n.type,
         hasAnnotation: !!n.annotationId,
+        confidence: n.confidence,
       },
     }));
 }
@@ -201,7 +202,7 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
 
       {contextMenu && (
         <div
-          className="fixed bg-card border border-border rounded-lg shadow-lg py-1 z-50 min-w-[140px]"
+          className="fixed bg-card border border-border rounded-lg shadow-lg py-1 z-50 min-w-[160px]"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -224,6 +225,29 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
           >
             Delete
           </button>
+          <div className="border-t border-border my-1" />
+          {(['uncertain', 'familiar', 'mastered'] as const).map((level) => {
+            const dotColor = level === 'uncertain' ? 'bg-red-500' : level === 'familiar' ? 'bg-amber-500' : 'bg-green-500';
+            const label = level === 'uncertain' ? 'Mark uncertain' : level === 'familiar' ? 'Mark familiar' : 'Mark mastered';
+            const currentNode = topicMap?.nodes.find((n) => n.id === contextMenu.nodeId);
+            const isActive = currentNode?.confidence === level;
+            return (
+              <button
+                key={level}
+                onClick={() => {
+                  updateNode(topicId, contextMenu.nodeId, {
+                    confidence: isActive ? undefined : level,
+                  });
+                  setContextMenu(null);
+                }}
+                className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted flex items-center gap-2"
+              >
+                <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`} />
+                <span className="flex-1">{label}</span>
+                {isActive && <span className="text-xs text-primary">✓</span>}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
