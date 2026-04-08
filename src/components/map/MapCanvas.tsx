@@ -20,6 +20,7 @@ import manifest from '@/data/content-manifest.json';
 import { ConceptNode } from './ConceptNode';
 import { MapToolbar } from './MapToolbar';
 import { ExplosionOverlay } from './ExplosionOverlay';
+import { EdgePopover } from './EdgePopover';
 
 const nodeTypes = { concept: ConceptNode };
 
@@ -110,6 +111,7 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
   } | null>(null);
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [explodedNodeId, setExplodedNodeId] = useState<string | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<{ id: string; x: number; y: number } | null>(null);
   const screenToFlowRef = useRef<((x: number, y: number) => { x: number; y: number }) | null>(null);
 
   // Initialize map from scaffold on first open
@@ -201,6 +203,10 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
     [],
   );
 
+  const onEdgeClick = useCallback((event: React.MouseEvent, edge: Edge) => {
+    setSelectedEdge({ id: edge.id, x: event.clientX, y: event.clientY });
+  }, []);
+
   const handleNodeDoubleClick = useCallback(
     (_: unknown, node: Node) => {
       onNodeDoubleClick?.(node.id);
@@ -264,7 +270,8 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
         onNodeClick={handleNodeClick}
         onNodeDoubleClick={handleNodeDoubleClick}
         onNodeContextMenu={onNodeContextMenu}
-        onPaneClick={() => setContextMenu(null)}
+        onEdgeClick={onEdgeClick}
+        onPaneClick={() => { setContextMenu(null); setSelectedEdge(null); }}
         onKeyDown={onKeyDown}
         nodeTypes={nodeTypes}
         snapToGrid={snapToGrid}
@@ -341,6 +348,15 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
             });
           })()}
         </div>
+      )}
+
+      {selectedEdge && (
+        <EdgePopover
+          edgeId={selectedEdge.id}
+          topicId={topicId}
+          position={{ x: selectedEdge.x, y: selectedEdge.y }}
+          onClose={() => setSelectedEdge(null)}
+        />
       )}
     </div>
   );
