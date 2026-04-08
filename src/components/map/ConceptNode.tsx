@@ -4,6 +4,14 @@ interface ConceptNodeData {
   label: string;
   nodeType: 'structural' | 'concept' | 'super-node';
   hasAnnotation?: boolean;
+  confidence?: string;
+}
+
+export function confidenceClass(confidence?: string): string {
+  if (confidence === 'uncertain') return 'border-red-500/70 shadow-red-500/20 shadow-sm';
+  if (confidence === 'familiar') return 'border-amber-500/70 shadow-amber-500/20 shadow-sm';
+  if (confidence === 'mastered') return 'border-green-500/70 shadow-green-500/20 shadow-sm';
+  return '';
 }
 
 export function ConceptNode({ data }: NodeProps) {
@@ -19,6 +27,7 @@ export function ConceptNode({ data }: NodeProps) {
         ${isSuperNode ? 'bg-card border-primary/40 text-foreground border-dashed' : ''}
         ${!isStructural && !isSuperNode ? 'bg-card border-primary/20 text-foreground shadow-sm' : ''}
         ${d.hasAnnotation ? 'ring-1 ring-primary/30' : ''}
+        ${confidenceClass(d.confidence)}
       `}
     >
       <Handle type="target" position={Position.Top} className="!bg-primary/40 !w-2 !h-2" />
