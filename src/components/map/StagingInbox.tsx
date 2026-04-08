@@ -34,6 +34,24 @@ export function StagingInbox({ topicId }: StagingInboxProps) {
     [topicId, removeNode],
   );
 
+  const handleDragStart = useCallback(
+    (event: React.DragEvent, nodeId: string) => {
+      event.dataTransfer.setData('nodeId', nodeId);
+      event.dataTransfer.effectAllowed = 'move';
+
+      // Create off-screen ghost element for drag image
+      const ghost = document.createElement('div');
+      ghost.style.cssText =
+        'position:fixed;top:-200px;left:-200px;padding:4px 10px;background:#1e1b4b;border:1px solid #6366f1;border-radius:6px;font-size:12px;color:#e2e8f0;white-space:nowrap';
+      const label = stagedNodes.find((n) => n.id === nodeId)?.label ?? '';
+      ghost.textContent = label;
+      document.body.appendChild(ghost);
+      event.dataTransfer.setDragImage(ghost, 0, 0);
+      setTimeout(() => document.body.removeChild(ghost), 0);
+    },
+    [stagedNodes],
+  );
+
   if (stagedNodes.length === 0) return null;
 
   return (
@@ -51,7 +69,9 @@ export function StagingInbox({ topicId }: StagingInboxProps) {
           {stagedNodes.map((node) => (
             <div
               key={node.id}
-              className="flex items-center gap-2 px-2 py-1.5 rounded bg-muted/50 text-sm group"
+              draggable
+              onDragStart={(e) => handleDragStart(e, node.id)}
+              className="flex items-center gap-2 px-2 py-1.5 rounded bg-muted/50 text-sm group cursor-grab active:cursor-grabbing"
             >
               <GripVertical size={12} className="text-foreground/30 shrink-0" />
               <span className="truncate flex-1">{node.label}</span>

@@ -128,6 +128,27 @@ describe('useMapStore', () => {
   });
 });
 
+describe('drag-to-canvas (store)', () => {
+  it('promotes staged node to placed with a given position', () => {
+    useMapStore.getState().initMap('t');
+    const nodeId = useMapStore.getState().addNode('t', {
+      label: 'Captured idea',
+      type: 'concept',
+      status: 'staged',
+    });
+
+    // Simulate what onDrop calls after coordinate conversion
+    useMapStore.getState().updateNode('t', nodeId, {
+      status: 'placed',
+      position: { x: 320, y: 180 },
+    });
+
+    const node = useMapStore.getState().maps['t'].nodes[0];
+    expect(node.status).toBe('placed');
+    expect(node.position).toEqual({ x: 320, y: 180 });
+  });
+});
+
 describe('confidence states', () => {
   it('sets confidence on a node via updateNode', () => {
     useMapStore.getState().initMap('t');
