@@ -8,6 +8,7 @@ interface ExplosionOverlayProps {
   topicId: string;
   onClose: () => void;
   onAnnotationJump: (nodeId: string) => void;
+  onChildClick?: (nodeId: string) => void;
 }
 
 // Pure helper — exported for testing
@@ -34,9 +35,11 @@ export function ExplosionOverlay({
   topicId,
   onClose,
   onAnnotationJump,
+  onChildClick,
 }: ExplosionOverlayProps) {
   const { flowToScreenPosition } = useReactFlow();
   const containerRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const topicMap = useMapStore((s) => s.maps[topicId]);
   const node = topicMap?.nodes.find((n) => n.id === nodeId);
@@ -50,6 +53,11 @@ export function ExplosionOverlay({
     (topicMap?.edges ?? []).filter((e) => e.source === nodeId).map((e) => e.target),
   );
   const children = (topicMap?.nodes ?? []).filter((n) => childIds.has(n.id) && n.position);
+
+  // Focus dialog on mount for keyboard accessibility
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
 
   // Dismiss on Escape
   useEffect(() => {
@@ -81,6 +89,15 @@ export function ExplosionOverlay({
       className="absolute inset-0 z-40"
       style={{ pointerEvents: 'none' }}
     >
+      {/* Invisible focus target for a11y */}
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Node details: ${node.label}`}
+        tabIndex={-1}
+        className="sr-only"
+      />
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/45"
@@ -123,7 +140,7 @@ export function ExplosionOverlay({
           </p>
           <button
             className="text-[10px] text-indigo-400 hover:text-indigo-300"
-            onClick={() => { onAnnotationJump(nodeId); onClose(); }}
+            onClick={() => onAnnotationJump(nodeId)}
           >
             Jump to annotation ↗
           </button>
@@ -146,7 +163,7 @@ export function ExplosionOverlay({
           key={child.id}
           className="absolute -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0f172a] border border-indigo-500/70 rounded-md text-[11px] text-indigo-300 hover:border-indigo-400 hover:text-indigo-200 transition-colors"
           style={{ left: childPositions[i].x, top: childPositions[i].y, zIndex: 43, pointerEvents: 'auto' }}
-          onClick={() => onAnnotationJump(child.id)}
+          onClick={() => onChildClick ? onChildClick(child.id) : onAnnotationJump(child.id)}
         >
           {child.label}
         </button>

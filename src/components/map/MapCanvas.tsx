@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   ReactFlow,
   Background,
@@ -25,13 +25,14 @@ const nodeTypes = { concept: ConceptNode };
 
 // Private inner component — must be rendered as a child of <ReactFlow> to access useReactFlow()
 function DropHandler({
-  onScreenToFlow,
+  converterRef,
 }: {
-  onScreenToFlow: (fn: (x: number, y: number) => { x: number; y: number }) => void;
+  converterRef: RefObject<((x: number, y: number) => { x: number; y: number }) | null>;
 }) {
   const { screenToFlowPosition } = useReactFlow();
-  // Expose the conversion function to the parent on every render
-  onScreenToFlow((x, y) => screenToFlowPosition({ x, y }));
+  useEffect(() => {
+    converterRef.current = (x, y) => screenToFlowPosition({ x, y });
+  }, [converterRef, screenToFlowPosition]);
   return null;
 }
 
@@ -255,7 +256,7 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
         <Controls showInteractive={false} />
-        <DropHandler onScreenToFlow={(fn) => { screenToFlowRef.current = fn; }} />
+        <DropHandler converterRef={screenToFlowRef} />
         {explodedNodeId && (
           <ExplosionOverlay
             nodeId={explodedNodeId}
@@ -265,6 +266,7 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
               onAnnotationJump?.(nId);
               setExplodedNodeId(null);
             }}
+            onChildClick={(nId) => setExplodedNodeId(nId)}
           />
         )}
       </ReactFlow>
