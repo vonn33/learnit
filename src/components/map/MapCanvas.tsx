@@ -52,21 +52,40 @@ function toFlowNodes(mapNodes: MapNode[]): Node[] {
     }));
 }
 
+export function edgeStyle(type?: MapEdge['relationshipType']): {
+  stroke: string;
+  strokeWidth: number;
+  strokeDasharray?: string;
+  markerType: MarkerType;
+} {
+  switch (type) {
+    case 'causes':      return { stroke: '#f97316', strokeWidth: 2, markerType: MarkerType.ArrowClosed };
+    case 'supports':    return { stroke: '#22c55e', strokeWidth: 2, markerType: MarkerType.ArrowClosed };
+    case 'contradicts': return { stroke: '#ef4444', strokeWidth: 2, strokeDasharray: '6,3', markerType: MarkerType.ArrowClosed };
+    case 'is-a':        return { stroke: '#a78bfa', strokeWidth: 1.5, markerType: MarkerType.Arrow };
+    default:            return { stroke: '#334155', strokeWidth: 1.5, strokeDasharray: '3,3', markerType: MarkerType.ArrowClosed };
+  }
+}
+
 function toFlowEdges(mapEdges: MapEdge[]): Edge[] {
-  return mapEdges.map((e) => ({
-    id: e.id,
-    source: e.source,
-    target: e.target,
-    label: e.label,
-    markerEnd:
-      e.direction !== 'backward'
-        ? { type: MarkerType.ArrowClosed }
-        : undefined,
-    markerStart:
-      e.direction === 'backward' || e.direction === 'bidirectional'
-        ? { type: MarkerType.ArrowClosed }
-        : undefined,
-  }));
+  return mapEdges.map((e) => {
+    const { stroke, strokeWidth, strokeDasharray, markerType } = edgeStyle(e.relationshipType);
+    return {
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      label: e.label,
+      style: { stroke, strokeWidth, strokeDasharray },
+      markerEnd:
+        e.direction !== 'backward'
+          ? { type: markerType, color: stroke }
+          : undefined,
+      markerStart:
+        e.direction === 'backward' || e.direction === 'bidirectional'
+          ? { type: markerType, color: stroke }
+          : undefined,
+    };
+  });
 }
 
 interface MapCanvasProps {
