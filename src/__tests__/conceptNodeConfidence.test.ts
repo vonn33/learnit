@@ -16,6 +16,5 @@ describe('confidenceClass', () => {
 
   it('returns empty string when unset', () => {
     expect(confidenceClass(undefined)).toBe('');
-    expect(confidenceClass('')).toBe('');
   });
 });

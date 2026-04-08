@@ -1,13 +1,14 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import type { MapNode } from '@/store/mapStore';
 
 interface ConceptNodeData {
   label: string;
   nodeType: 'structural' | 'concept' | 'super-node';
   hasAnnotation?: boolean;
-  confidence?: string;
+  confidence?: MapNode['confidence'];
 }
 
-export function confidenceClass(confidence?: string): string {
+export function confidenceClass(confidence?: MapNode['confidence']): string {
   if (confidence === 'uncertain') return 'border-red-500/70 shadow-red-500/20 shadow-sm';
   if (confidence === 'familiar') return 'border-amber-500/70 shadow-amber-500/20 shadow-sm';
   if (confidence === 'mastered') return 'border-green-500/70 shadow-green-500/20 shadow-sm';
