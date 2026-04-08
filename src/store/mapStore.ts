@@ -19,6 +19,8 @@ export interface MapEdge {
   target: string;
   label?: string;
   direction: 'forward' | 'backward' | 'bidirectional';
+  relationshipType?: 'causes' | 'supports' | 'contradicts' | 'is-a';
+  note?: string;
 }
 
 export interface TopicMap {
@@ -29,6 +31,7 @@ export interface TopicMap {
 type NewNode = Omit<MapNode, 'id'>;
 type NewEdge = Omit<MapEdge, 'id'>;
 type NodeUpdate = Partial<Pick<MapNode, 'label' | 'status' | 'position' | 'annotationId' | 'linkedMapId' | 'type' | 'confidence'>>;
+type EdgeUpdate = Partial<Pick<MapEdge, 'relationshipType' | 'note' | 'label' | 'direction'>>;
 
 interface MapStore {
   maps: Record<string, TopicMap>;
@@ -38,6 +41,7 @@ interface MapStore {
   updateNode: (topicId: string, nodeId: string, patch: NodeUpdate) => void;
   removeNode: (topicId: string, nodeId: string) => void;
   addEdge: (topicId: string, edge: NewEdge) => string;
+  updateEdge: (topicId: string, edgeId: string, patch: EdgeUpdate) => void;
   removeEdge: (topicId: string, edgeId: string) => void;
   updateNodePositions: (topicId: string, positions: Record<string, { x: number; y: number }>) => void;
   loadScaffold: (topicId: string, scaffold: Array<{ label: string; type: 'structural' }>) => void;
@@ -124,6 +128,24 @@ export const useMapStore = create<MapStore>()(
           };
         });
         return id;
+      },
+
+      updateEdge: (topicId, edgeId, patch) => {
+        set((s) => {
+          const map = s.maps[topicId];
+          if (!map) return s;
+          return {
+            maps: {
+              ...s.maps,
+              [topicId]: {
+                ...map,
+                edges: map.edges.map((e) =>
+                  e.id === edgeId ? { ...e, ...patch } : e,
+                ),
+              },
+            },
+          };
+        });
       },
 
       removeEdge: (topicId, edgeId) => {

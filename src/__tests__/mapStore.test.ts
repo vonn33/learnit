@@ -226,3 +226,52 @@ describe('path highlighting (neighbor computation)', () => {
     expect(getNeighborIds('x', [])).toEqual(new Set());
   });
 });
+
+describe('edge semantics (store)', () => {
+  it('updateEdge sets relationshipType on an edge', () => {
+    const store = useMapStore.getState();
+    store.initMap('es1');
+    const nA = store.addNode('es1', { label: 'A', type: 'concept', status: 'placed' });
+    const nB = store.addNode('es1', { label: 'B', type: 'concept', status: 'placed' });
+    const eId = store.addEdge('es1', { source: nA, target: nB, direction: 'forward' });
+    store.updateEdge('es1', eId, { relationshipType: 'causes' });
+    const edge = useMapStore.getState().maps['es1'].edges.find((e) => e.id === eId);
+    expect(edge?.relationshipType).toBe('causes');
+  });
+
+  it('updateEdge sets note on an edge', () => {
+    const store = useMapStore.getState();
+    store.initMap('es2');
+    const nA = store.addNode('es2', { label: 'A', type: 'concept', status: 'placed' });
+    const nB = store.addNode('es2', { label: 'B', type: 'concept', status: 'placed' });
+    const eId = store.addEdge('es2', { source: nA, target: nB, direction: 'forward' });
+    store.updateEdge('es2', eId, { note: 'important link' });
+    const edge = useMapStore.getState().maps['es2'].edges.find((e) => e.id === eId);
+    expect(edge?.note).toBe('important link');
+  });
+
+  it('updateEdge clears relationshipType when set to undefined', () => {
+    const store = useMapStore.getState();
+    store.initMap('es3');
+    const nA = store.addNode('es3', { label: 'A', type: 'concept', status: 'placed' });
+    const nB = store.addNode('es3', { label: 'B', type: 'concept', status: 'placed' });
+    const eId = store.addEdge('es3', { source: nA, target: nB, direction: 'forward' });
+    store.updateEdge('es3', eId, { relationshipType: 'causes' });
+    store.updateEdge('es3', eId, { relationshipType: undefined });
+    const edge = useMapStore.getState().maps['es3'].edges.find((e) => e.id === eId);
+    expect(edge?.relationshipType).toBeUndefined();
+  });
+
+  it('updateEdge does not affect other edges in the same map', () => {
+    const store = useMapStore.getState();
+    store.initMap('es4');
+    const nA = store.addNode('es4', { label: 'A', type: 'concept', status: 'placed' });
+    const nB = store.addNode('es4', { label: 'B', type: 'concept', status: 'placed' });
+    const nC = store.addNode('es4', { label: 'C', type: 'concept', status: 'placed' });
+    const eAB = store.addEdge('es4', { source: nA, target: nB, direction: 'forward' });
+    const eBC = store.addEdge('es4', { source: nB, target: nC, direction: 'forward' });
+    store.updateEdge('es4', eAB, { relationshipType: 'causes' });
+    const edgeBC = useMapStore.getState().maps['es4'].edges.find((e) => e.id === eBC);
+    expect(edgeBC?.relationshipType).toBeUndefined();
+  });
+});
