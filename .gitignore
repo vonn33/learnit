@@ -33,3 +33,6 @@ static/.nojekyll
 
 # Claude Code
 .claude
+
+# Superpowers brainstorm sessions
+.superpowers/
