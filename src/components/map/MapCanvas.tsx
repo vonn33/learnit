@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   addEdge,
   BackgroundVariant,
   MarkerType,
@@ -20,6 +21,18 @@ import { ConceptNode } from './ConceptNode';
 import { MapToolbar } from './MapToolbar';
 
 const nodeTypes = { concept: ConceptNode };
+
+// Private inner component — must be rendered as a child of <ReactFlow> to access useReactFlow()
+function DropHandler({
+  onScreenToFlow,
+}: {
+  onScreenToFlow: (fn: (x: number, y: number) => { x: number; y: number }) => void;
+}) {
+  const { screenToFlowPosition } = useReactFlow();
+  // Expose the conversion function to the parent on every render
+  onScreenToFlow((x, y) => screenToFlowPosition({ x, y }));
+  return null;
+}
 
 function toFlowNodes(mapNodes: MapNode[]): Node[] {
   return mapNodes
@@ -75,6 +88,7 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
     nodeId: string;
   } | null>(null);
   const [snapToGrid, setSnapToGrid] = useState(false);
+  const screenToFlowRef = useRef<((x: number, y: number) => { x: number; y: number }) | null>(null);
 
   // Initialize map from scaffold on first open
   useEffect(() => {
@@ -123,6 +137,17 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
       updateNodePositions(topicId, { [node.id]: { x: node.position.x, y: node.position.y } });
     },
     [updateNodePositions, topicId],
+  );
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      const nodeId = event.dataTransfer.getData('nodeId');
+      if (!nodeId || !screenToFlowRef.current) return;
+      const flowPos = screenToFlowRef.current(event.clientX, event.clientY);
+      updateNode(topicId, nodeId, { status: 'placed', position: flowPos });
+    },
+    [topicId, updateNode],
   );
 
   const handleNodeClick = useCallback(
@@ -176,7 +201,12 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
   }, [setNodes]);
 
   return (
-    <div className="h-full w-full" onClick={() => setContextMenu(null)}>
+    <div
+      className="h-full w-full"
+      onClick={() => setContextMenu(null)}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={onDrop}
+    >
       <MapToolbar snapToGrid={snapToGrid} onToggleSnap={() => setSnapToGrid(!snapToGrid)} />
       <ReactFlow
         nodes={nodes}
@@ -198,6 +228,7 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
         <Controls showInteractive={false} />
+        <DropHandler onScreenToFlow={(fn) => { screenToFlowRef.current = fn; }} />
       </ReactFlow>
 
       {contextMenu && (
