@@ -131,7 +131,7 @@ export function ExplosionOverlay({
       )}
 
       {/* Empty state */}
-      {!excerptText && children.length === 0 && (
+      {!annotation && children.length === 0 && (
         <div
           className="absolute -translate-x-1/2 w-40 bg-[#111827] border border-indigo-500/10 rounded-md p-2 text-center"
           style={{ left: centerPos.x, top: centerPos.y + 36, zIndex: 43, pointerEvents: 'auto' }}
