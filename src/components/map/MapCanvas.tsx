@@ -139,6 +139,28 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
     [updateNodePositions, topicId],
   );
 
+  const onNodeMouseEnter = useCallback(
+    (_: unknown, node: Node) => {
+      const neighborIds = new Set<string>();
+      for (const e of edges) {
+        if (e.source === node.id) neighborIds.add(e.target);
+        if (e.target === node.id) neighborIds.add(e.source);
+      }
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id === node.id) return { ...n, className: 'ring-2 ring-primary/60' };
+          if (neighborIds.has(n.id)) return { ...n, className: '' };
+          return { ...n, className: 'opacity-30 transition-opacity' };
+        }),
+      );
+    },
+    [edges, setNodes],
+  );
+
+  const onNodeMouseLeave = useCallback(() => {
+    setNodes((nds) => nds.map((n) => ({ ...n, className: '' })));
+  }, [setNodes]);
+
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
@@ -215,6 +237,8 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
+        onNodeMouseEnter={onNodeMouseEnter}
+        onNodeMouseLeave={onNodeMouseLeave}
         onNodeClick={handleNodeClick}
         onNodeDoubleClick={handleNodeDoubleClick}
         onNodeContextMenu={onNodeContextMenu}
@@ -224,6 +248,7 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
         snapToGrid={snapToGrid}
         snapGrid={[16, 16]}
         fitView
+        connectionRadius={30}
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
