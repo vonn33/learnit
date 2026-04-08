@@ -127,3 +127,52 @@ describe('useMapStore', () => {
     expect(staged).toHaveLength(2);
   });
 });
+
+describe('confidence states', () => {
+  it('sets confidence on a node via updateNode', () => {
+    useMapStore.getState().initMap('t');
+    const nodeId = useMapStore.getState().addNode('t', {
+      label: 'Spaced Repetition',
+      type: 'concept',
+      status: 'placed',
+      position: { x: 0, y: 0 },
+    });
+
+    useMapStore.getState().updateNode('t', nodeId, { confidence: 'familiar' });
+
+    const node = useMapStore.getState().maps['t'].nodes[0];
+    expect(node.confidence).toBe('familiar');
+  });
+
+  it('clears confidence when set to undefined', () => {
+    useMapStore.getState().initMap('t');
+    const nodeId = useMapStore.getState().addNode('t', {
+      label: 'Node',
+      type: 'concept',
+      status: 'placed',
+      position: { x: 0, y: 0 },
+    });
+
+    useMapStore.getState().updateNode('t', nodeId, { confidence: 'mastered' });
+    useMapStore.getState().updateNode('t', nodeId, { confidence: undefined });
+
+    const node = useMapStore.getState().maps['t'].nodes[0];
+    expect(node.confidence).toBeUndefined();
+  });
+
+  it('confidence does not affect other node fields', () => {
+    useMapStore.getState().initMap('t');
+    const nodeId = useMapStore.getState().addNode('t', {
+      label: 'Node',
+      type: 'concept',
+      status: 'placed',
+      position: { x: 10, y: 20 },
+    });
+
+    useMapStore.getState().updateNode('t', nodeId, { confidence: 'uncertain' });
+
+    const node = useMapStore.getState().maps['t'].nodes[0];
+    expect(node.label).toBe('Node');
+    expect(node.position).toEqual({ x: 10, y: 20 });
+  });
+});

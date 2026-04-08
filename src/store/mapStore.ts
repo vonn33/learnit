@@ -10,6 +10,7 @@ export interface MapNode {
   position?: { x: number; y: number };
   annotationId?: string;
   linkedMapId?: string;
+  confidence?: 'uncertain' | 'familiar' | 'mastered';
 }
 
 export interface MapEdge {
@@ -27,7 +28,7 @@ export interface TopicMap {
 
 type NewNode = Omit<MapNode, 'id'>;
 type NewEdge = Omit<MapEdge, 'id'>;
-type NodeUpdate = Partial<Pick<MapNode, 'label' | 'status' | 'position' | 'annotationId' | 'linkedMapId' | 'type'>>;
+type NodeUpdate = Partial<Pick<MapNode, 'label' | 'status' | 'position' | 'annotationId' | 'linkedMapId' | 'type' | 'confidence'>>;
 
 interface MapStore {
   maps: Record<string, TopicMap>;
