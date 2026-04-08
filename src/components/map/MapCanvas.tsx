@@ -19,6 +19,7 @@ import { generateScaffold } from '@/lib/mapScaffold';
 import manifest from '@/data/content-manifest.json';
 import { ConceptNode } from './ConceptNode';
 import { MapToolbar } from './MapToolbar';
+import { ExplosionOverlay } from './ExplosionOverlay';
 
 const nodeTypes = { concept: ConceptNode };
 
@@ -69,11 +70,11 @@ function toFlowEdges(mapEdges: MapEdge[]): Edge[] {
 
 interface MapCanvasProps {
   topicId: string;
-  onNodeClick?: (nodeId: string) => void;
+  onAnnotationJump?: (nodeId: string) => void;
   onNodeDoubleClick?: (nodeId: string) => void;
 }
 
-export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvasProps) {
+export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapCanvasProps) {
   const maps = useMapStore((s) => s.maps);
   const initMap = useMapStore((s) => s.initMap);
   const loadScaffold = useMapStore((s) => s.loadScaffold);
@@ -88,6 +89,7 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
     nodeId: string;
   } | null>(null);
   const [snapToGrid, setSnapToGrid] = useState(false);
+  const [explodedNodeId, setExplodedNodeId] = useState<string | null>(null);
   const screenToFlowRef = useRef<((x: number, y: number) => { x: number; y: number }) | null>(null);
 
   // Initialize map from scaffold on first open
@@ -174,9 +176,9 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
 
   const handleNodeClick = useCallback(
     (_: unknown, node: Node) => {
-      onNodeClick?.(node.id);
+      setExplodedNodeId(node.id);
     },
-    [onNodeClick],
+    [],
   );
 
   const handleNodeDoubleClick = useCallback(
@@ -254,6 +256,17 @@ export function MapCanvas({ topicId, onNodeClick, onNodeDoubleClick }: MapCanvas
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
         <Controls showInteractive={false} />
         <DropHandler onScreenToFlow={(fn) => { screenToFlowRef.current = fn; }} />
+        {explodedNodeId && (
+          <ExplosionOverlay
+            nodeId={explodedNodeId}
+            topicId={topicId}
+            onClose={() => setExplodedNodeId(null)}
+            onAnnotationJump={(nId) => {
+              onAnnotationJump?.(nId);
+              setExplodedNodeId(null);
+            }}
+          />
+        )}
       </ReactFlow>
 
       {contextMenu && (

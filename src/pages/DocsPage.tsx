@@ -181,7 +181,7 @@ export function DocsPage() {
       }
       right={
         <div className="relative h-full">
-          <MapCanvas topicId={topicId} onNodeClick={handleMapNodeClick} onNodeDoubleClick={handleMapNodeDoubleClick} />
+          <MapCanvas topicId={topicId} onAnnotationJump={handleMapNodeClick} onNodeDoubleClick={handleMapNodeDoubleClick} />
           <StagingInbox topicId={topicId} />
         </div>
       }
