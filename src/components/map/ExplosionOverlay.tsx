@@ -38,10 +38,10 @@ export function ExplosionOverlay({
   const { flowToScreenPosition } = useReactFlow();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const topicMap = useMapStore.getState().maps[topicId];
+  const topicMap = useMapStore((s) => s.maps[topicId]);
   const node = topicMap?.nodes.find((n) => n.id === nodeId);
 
-  const annotations = useAnnotationStore.getState().annotations;
+  const annotations = useAnnotationStore((s) => s.annotations);
   const annotation = node?.annotationId
     ? annotations.find((a) => a.id === node.annotationId)
     : undefined;
