@@ -46,6 +46,7 @@ interface MapStore {
   updateNodePositions: (topicId: string, positions: Record<string, { x: number; y: number }>) => void;
   loadScaffold: (topicId: string, scaffold: Array<{ label: string; type: 'structural' }>) => void;
   getStagedNodes: (topicId: string) => MapNode[];
+  clearMap: (topicId: string) => void;
   reset: () => void;
 }
 
@@ -204,6 +205,18 @@ export const useMapStore = create<MapStore>()(
         const map = get().maps[topicId];
         if (!map) return [];
         return map.nodes.filter((n) => n.status === 'staged');
+      },
+
+      clearMap: (topicId) => {
+        set((s) => {
+          if (!s.maps[topicId]) return s;
+          return {
+            maps: {
+              ...s.maps,
+              [topicId]: { nodes: [], edges: [] },
+            },
+          };
+        });
       },
 
       reset: () => set({ maps: {} }),

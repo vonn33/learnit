@@ -23,10 +23,11 @@ export function EdgePopover({ edgeId, topicId, position, onClose }: EdgePopoverP
   const removeEdge = useMapStore((s) => s.removeEdge);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [noteValue, setNoteValue] = useState(edge?.note ?? '');
+  const [labelValue, setLabelValue] = useState(edge?.label ?? '');
 
   // Clamp to viewport so popover never renders off-screen
   const POPOVER_W = 232;
-  const POPOVER_H = 190;
+  const POPOVER_H = 240;
   const left = Math.min(position.x, window.innerWidth - POPOVER_W - 8);
   const top = Math.min(position.y + 8, window.innerHeight - POPOVER_H - 8);
 
@@ -87,6 +88,19 @@ export function EdgePopover({ edgeId, topicId, position, onClose }: EdgePopoverP
             );
           })}
         </div>
+      </div>
+
+      {/* Label (visible on edge) */}
+      <div className="mb-2.5">
+        <div className="text-[10px] text-slate-500 mb-1.5">LABEL</div>
+        <input
+          type="text"
+          className="w-full bg-[#0f172a] border border-[#334155] rounded-md p-1.5 text-[11px] text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-slate-500"
+          placeholder="Shown on edge"
+          value={labelValue}
+          onChange={(e) => setLabelValue(e.target.value)}
+          onBlur={() => updateEdge(topicId, edgeId, { label: labelValue || undefined })}
+        />
       </div>
 
       {/* Note */}

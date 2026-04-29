@@ -103,6 +103,7 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
   const storeAddEdge = useMapStore((s) => s.addEdge);
   const updateNode = useMapStore((s) => s.updateNode);
   const removeNode = useMapStore((s) => s.removeNode);
+  const clearMap = useMapStore((s) => s.clearMap);
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -112,6 +113,8 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [explodedNodeId, setExplodedNodeId] = useState<string | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const screenToFlowRef = useRef<((x: number, y: number) => { x: number; y: number }) | null>(null);
 
   // Initialize map from scaffold on first open
@@ -163,27 +166,13 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
     [updateNodePositions, topicId],
   );
 
-  const onNodeMouseEnter = useCallback(
-    (_: unknown, node: Node) => {
-      const neighborIds = new Set<string>();
-      for (const e of edges) {
-        if (e.source === node.id) neighborIds.add(e.target);
-        if (e.target === node.id) neighborIds.add(e.source);
-      }
-      setNodes((nds) =>
-        nds.map((n) => {
-          if (n.id === node.id) return { ...n, className: 'ring-2 ring-primary/60' };
-          if (neighborIds.has(n.id)) return { ...n, className: '' };
-          return { ...n, className: 'opacity-30 transition-opacity' };
-        }),
-      );
-    },
-    [edges, setNodes],
-  );
+  const onNodeMouseEnter = useCallback((_: unknown, node: Node) => {
+    setHoveredNodeId(node.id);
+  }, []);
 
   const onNodeMouseLeave = useCallback(() => {
-    setNodes((nds) => nds.map((n) => ({ ...n, className: '' })));
-  }, [setNodes]);
+    setHoveredNodeId(null);
+  }, []);
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
@@ -234,21 +223,43 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
 
   // Listen for focus-map-node events from the reader (bi-directional linking)
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
     const handler = (e: Event) => {
       const { nodeId } = (e as CustomEvent).detail as { nodeId: string };
-      setNodes((nds) =>
-        nds.map((n) => ({
-          ...n,
-          className: n.id === nodeId ? 'ring-2 ring-primary animate-pulse' : '',
-        })),
-      );
-      setTimeout(() => {
-        setNodes((nds) => nds.map((n) => ({ ...n, className: '' })));
-      }, 2000);
+      setFocusedNodeId(nodeId);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setFocusedNodeId(null), 2000);
     };
     window.addEventListener('focus-map-node', handler);
-    return () => window.removeEventListener('focus-map-node', handler);
-  }, [setNodes]);
+    return () => {
+      window.removeEventListener('focus-map-node', handler);
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
+  // Apply className from hover + focus state — single source of truth
+  useEffect(() => {
+    setNodes((nds) => {
+      const neighborIds = new Set<string>();
+      if (hoveredNodeId) {
+        for (const e of edges) {
+          if (e.source === hoveredNodeId) neighborIds.add(e.target);
+          if (e.target === hoveredNodeId) neighborIds.add(e.source);
+        }
+      }
+      return nds.map((n) => {
+        let className = '';
+        if (n.id === focusedNodeId) {
+          className = 'ring-2 ring-primary animate-pulse';
+        } else if (n.id === hoveredNodeId) {
+          className = 'ring-2 ring-primary/60';
+        } else if (hoveredNodeId && !neighborIds.has(n.id)) {
+          className = 'opacity-30 transition-opacity';
+        }
+        return n.className === className ? n : { ...n, className };
+      });
+    });
+  }, [hoveredNodeId, focusedNodeId, edges, setNodes]);
 
   return (
     <div
@@ -257,7 +268,15 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
     >
-      <MapToolbar snapToGrid={snapToGrid} onToggleSnap={() => setSnapToGrid(!snapToGrid)} />
+      <MapToolbar
+        snapToGrid={snapToGrid}
+        onToggleSnap={() => setSnapToGrid(!snapToGrid)}
+        onClearMap={() => {
+          if (window.confirm('Clear all nodes and edges from this map? This cannot be undone.')) {
+            clearMap(topicId);
+          }
+        }}
+      />
       <ReactFlow
         nodes={nodes}
         edges={edges}

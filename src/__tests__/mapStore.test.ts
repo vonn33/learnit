@@ -262,6 +262,30 @@ describe('edge semantics (store)', () => {
     expect(edge?.relationshipType).toBeUndefined();
   });
 
+  it('clearMap empties nodes and edges for the given topic only', () => {
+    const store = useMapStore.getState();
+    store.initMap('keep');
+    store.initMap('wipe');
+    const k = store.addNode('keep', { label: 'K', type: 'concept', status: 'placed', position: { x: 0, y: 0 } });
+    const a = store.addNode('wipe', { label: 'A', type: 'concept', status: 'placed', position: { x: 0, y: 0 } });
+    const b = store.addNode('wipe', { label: 'B', type: 'concept', status: 'placed', position: { x: 100, y: 0 } });
+    store.addEdge('wipe', { source: a, target: b, direction: 'forward' });
+
+    store.clearMap('wipe');
+
+    expect(useMapStore.getState().maps['wipe'].nodes).toEqual([]);
+    expect(useMapStore.getState().maps['wipe'].edges).toEqual([]);
+    expect(useMapStore.getState().maps['keep'].nodes.find((n) => n.id === k)).toBeDefined();
+  });
+
+  it('clearMap is a no-op for an unknown topic', () => {
+    const store = useMapStore.getState();
+    store.initMap('exists');
+    store.clearMap('does-not-exist');
+    expect(useMapStore.getState().maps['does-not-exist']).toBeUndefined();
+    expect(useMapStore.getState().maps['exists']).toBeDefined();
+  });
+
   it('updateEdge does not affect other edges in the same map', () => {
     const store = useMapStore.getState();
     store.initMap('es4');

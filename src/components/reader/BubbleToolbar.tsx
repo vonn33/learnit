@@ -10,7 +10,8 @@ import {clampToViewport} from '@/lib/positioning';
 import {useDelayedUnmount} from '@/lib/useDelayedUnmount';
 import {useMapStore} from '@/store/mapStore';
 import {useAnnotationStore} from '@/store/annotationStore';
-import {Zap, MapPin, ChevronDown} from 'lucide-react';
+import {Zap, MapPin, ChevronDown, Link2} from 'lucide-react';
+import {NodePicker} from '@/components/map/NodePicker';
 
 interface BubbleToolbarProps {
   pageUrl: string;
@@ -29,6 +30,7 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
   const [showTagMenu, setShowTagMenu] = useState(false);
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [noteText, setNoteText] = useState('');
+  const [showNodePicker, setShowNodePicker] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const noteInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -74,6 +76,7 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
         setShowTagMenu(false);
         setShowNoteInput(false);
         setNoteText('');
+        setShowNodePicker(false);
         setVisible(true);
       }, 80);
     }
@@ -189,6 +192,26 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
     onHighlightCreated();
   }
 
+  function handleConnect() {
+    setShowNodePicker(true);
+  }
+
+  function handleNodeSelected(nodeId: string) {
+    if (!topicId || !selectedText) return;
+    const annotationId = addAnnotation({
+      docId: pageUrl,
+      position: {start: 0, end: 0},
+      type: 'highlight',
+      text: selectedText,
+    });
+    useMapStore.getState().updateNode(topicId, nodeId, {annotationId});
+    useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
+    setShowNodePicker(false);
+    window.getSelection()?.removeAllRanges();
+    setVisible(false);
+    onHighlightCreated();
+  }
+
   const {bg: previewBg, border: previewBorder} = getHighlightColorForTags(
     selectedTagId ? [selectedTagId] : [],
     tags,
@@ -283,6 +306,13 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
             >
               <MapPin size={11} />
             </button>
+            <button
+              onClick={handleConnect}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-muted)] text-xs text-[var(--color-foreground)] transition-colors"
+              title="Connect to existing node"
+            >
+              <Link2 size={11} />
+            </button>
           </>
         )}
       </div>
@@ -340,6 +370,17 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
             }}
             placeholder="Add a note… (Enter to save)"
             className="flex-1 text-xs bg-[var(--color-muted)] rounded px-2 py-1.5 outline-none text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)]"
+          />
+        </div>
+      )}
+
+      {/* Node picker for Connect-to-Node */}
+      {showNodePicker && topicId && (
+        <div className="border-t border-[var(--color-border)] p-2">
+          <NodePicker
+            topicId={topicId}
+            onSelect={handleNodeSelected}
+            onClose={() => setShowNodePicker(false)}
           />
         </div>
       )}
