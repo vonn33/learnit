@@ -1,10 +1,8 @@
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
-import {type Tag, getTags, getHighlightsForPage} from '@/lib/storage';
+import {type Tag, getTags} from '@/lib/storage';
 import {
-  createHighlight,
   buildAnchorContext,
   getHighlightColorForTags,
-  applyHighlightsToDOM,
 } from '@/lib/highlights';
 import {clampToViewport} from '@/lib/positioning';
 import {useDelayedUnmount} from '@/lib/useDelayedUnmount';
@@ -15,11 +13,10 @@ import {NodePicker} from '@/components/map/NodePicker';
 
 interface BubbleToolbarProps {
   pageUrl: string;
-  onHighlightCreated: () => void;
   topicId?: string;
 }
 
-export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: BubbleToolbarProps) {
+export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
   const [visible, setVisible] = useState(false);
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [pos, setPos] = useState({top: -9999, left: -9999});
@@ -108,28 +105,19 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
   const doHighlight = useCallback(
     (note = '') => {
       if (!savedRange || !selectedText) return;
-      const tagIds = selectedTagId ? [selectedTagId] : [];
-      createHighlight({
-        pageUrl,
-        selectedText,
-        tagIds,
+      addAnnotation({
+        type: 'highlight',
+        docId: pageUrl,
+        text: selectedText,
+        anchorContext: buildAnchorContext(savedRange),
+        tagIds: selectedTagId ? [selectedTagId] : [],
         note,
         connectionUrl: '',
-        anchorContext: buildAnchorContext(savedRange),
-        charOffsetStart: 0, // required by type; not used for anchoring (anchorContext is used instead)
-        charOffsetEnd: 0,   // required by type; not used for anchoring (anchorContext is used instead)
       });
-      const container = document.querySelector('article.prose') as HTMLElement | null;
-      if (container) {
-        const allTags = getTags();
-        const highlights = getHighlightsForPage(pageUrl);
-        applyHighlightsToDOM(highlights, container, allTags);
-      }
       window.getSelection()?.removeAllRanges();
       setVisible(false);
-      onHighlightCreated();
     },
-    [savedRange, selectedText, selectedTagId, pageUrl, onHighlightCreated],
+    [savedRange, selectedText, selectedTagId, pageUrl, addAnnotation],
   );
 
   useEffect(() => {
@@ -157,9 +145,12 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
     if (!topicId || !selectedText) return;
     const annotationId = addAnnotation({
       docId: pageUrl,
-      position: {start: 0, end: 0},
       type: 'quick-capture',
       text: selectedText,
+      anchorContext: savedRange ? buildAnchorContext(savedRange) : '',
+      tagIds: [],
+      note: '',
+      connectionUrl: '',
     });
     addNode(topicId, {
       label: selectedText.slice(0, 60),
@@ -175,9 +166,12 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
     if (!topicId || !selectedText) return;
     const annotationId = addAnnotation({
       docId: pageUrl,
-      position: {start: 0, end: 0},
       type: 'highlight',
       text: selectedText,
+      anchorContext: savedRange ? buildAnchorContext(savedRange) : '',
+      tagIds: [],
+      note: '',
+      connectionUrl: '',
     });
     const nodeId = addNode(topicId, {
       label: selectedText.slice(0, 60),
@@ -189,7 +183,6 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
     useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
     window.getSelection()?.removeAllRanges();
     setVisible(false);
-    onHighlightCreated();
   }
 
   function handleConnect() {
@@ -200,16 +193,18 @@ export function BubbleToolbar({pageUrl, onHighlightCreated, topicId = ''}: Bubbl
     if (!topicId || !selectedText) return;
     const annotationId = addAnnotation({
       docId: pageUrl,
-      position: {start: 0, end: 0},
       type: 'highlight',
       text: selectedText,
+      anchorContext: savedRange ? buildAnchorContext(savedRange) : '',
+      tagIds: [],
+      note: '',
+      connectionUrl: '',
     });
     useMapStore.getState().updateNode(topicId, nodeId, {annotationId});
     useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
     setShowNodePicker(false);
     window.getSelection()?.removeAllRanges();
     setVisible(false);
-    onHighlightCreated();
   }
 
   const {bg: previewBg, border: previewBorder} = getHighlightColorForTags(

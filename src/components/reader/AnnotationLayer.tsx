@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {getHighlightsForPage, getTags} from '@/lib/storage';
+import {getTags} from '@/lib/storage';
 import {applyHighlightsToDOM} from '@/lib/highlights';
 import {BubbleToolbar} from './BubbleToolbar';
 import {NotePanel} from './NotePanel';
@@ -12,18 +12,19 @@ interface AnnotationLayerProps {
 }
 
 export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
-  const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
   const [markRect, setMarkRect] = useState<DOMRect | null>(null);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [noteDotRect, setNoteDotRect] = useState<DOMRect | null>(null);
   const appliedRef = useRef(false);
   const showAnnotations = useAnnotationStore((s) => s.showAnnotations);
+  const annotations = useAnnotationStore((s) => s.annotations);
 
-  // Apply highlights to DOM after content renders
+  // Re-apply marks whenever annotations or page changes
   useEffect(() => {
     appliedRef.current = false;
     const tags = getTags();
+    const pageAnnotations = annotations.filter((a) => a.docId === pageUrl);
 
     const tryApply = () => {
       const container = document.querySelector('article.prose') as HTMLElement | null;
@@ -37,9 +38,8 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
       });
       container.querySelectorAll('span.handbook-note-dot').forEach((dot) => dot.remove());
 
-      if (showAnnotations) {
-        const highlights = getHighlightsForPage(pageUrl);
-        if (highlights.length > 0) applyHighlightsToDOM(highlights, container, tags);
+      if (showAnnotations && pageAnnotations.length > 0) {
+        applyHighlightsToDOM(pageAnnotations, container, tags);
       }
       appliedRef.current = true;
       return true;
@@ -60,7 +60,7 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [pageUrl, showAnnotations]);
+  }, [pageUrl, showAnnotations, annotations]);
 
   // Click handler: mark clicks → NotePanel; note-dot clicks → NoteTooltip
   useEffect(() => {
@@ -71,34 +71,24 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
       if (dot?.dataset.highlightId) {
         setNoteDotRect(dot.getBoundingClientRect());
         setActiveNoteId(dot.dataset.highlightId);
-        setActiveHighlightId(null);
+        setActiveAnnotationId(null);
         return;
       }
 
       const mark = (e.target as HTMLElement).closest(
         'mark[data-highlight-id]',
       ) as HTMLElement | null;
-      if (mark?.dataset.highlightId) {
-        const id = mark.dataset.highlightId;
+      if (mark?.dataset.annotationId) {
+        const id = mark.dataset.annotationId;
         setMarkRect(mark.getBoundingClientRect());
-        setActiveHighlightId(id);
+        setActiveAnnotationId(id);
         setActiveNoteId(null);
-        const rawAnnotId = mark.dataset.annotationId ?? null;
-        const annotExistsInStore = rawAnnotId
-          ? useAnnotationStore.getState().annotations.some((a) => a.id === rawAnnotId)
-          : false;
-        setActiveAnnotationId(annotExistsInStore ? rawAnnotId : null);
 
-        const annotationId = mark.dataset.annotationId;
-        if (annotationId) {
-          const annotation = useAnnotationStore
-            .getState()
-            .annotations.find((a) => a.id === annotationId);
-          if (annotation?.mapNodeId) {
-            window.dispatchEvent(
-              new CustomEvent('focus-map-node', {detail: {nodeId: annotation.mapNodeId}}),
-            );
-          }
+        const annotation = useAnnotationStore.getState().annotations.find((a) => a.id === id);
+        if (annotation?.mapNodeId) {
+          window.dispatchEvent(
+            new CustomEvent('focus-map-node', {detail: {nodeId: annotation.mapNodeId}}),
+          );
         }
       }
     }
@@ -106,41 +96,19 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
     return () => document.removeEventListener('click', onDocClick);
   }, []);
 
-  function reapplyHighlights() {
-    const tags = getTags();
-    const container = document.querySelector('article.prose') as HTMLElement | null;
-    if (container) {
-      // Strip existing marks before re-applying to avoid double-wrap
-      container.querySelectorAll('mark[data-highlight-id]').forEach((mark) => {
-        const parent = mark.parentNode;
-        while (mark.firstChild) parent?.insertBefore(mark.firstChild, mark);
-        parent?.removeChild(mark);
-        parent?.normalize();
-      });
-      container.querySelectorAll('span.handbook-note-dot').forEach((dot) => dot.remove());
-      const highlights = getHighlightsForPage(pageUrl);
-      applyHighlightsToDOM(highlights, container, tags);
-    }
-  }
-
   return (
     <>
       <BubbleToolbar
         pageUrl={pageUrl}
         topicId={topicId}
-        onHighlightCreated={reapplyHighlights}
       />
-      {activeHighlightId && (
+      {activeAnnotationId && (
         <NotePanel
-          highlightId={activeHighlightId}
-          annotationId={activeAnnotationId ?? undefined}
+          annotationId={activeAnnotationId}
           topicId={topicId}
           anchorRect={markRect}
           tags={getTags()}
-          onClose={() => {
-            setActiveHighlightId(null);
-            setActiveAnnotationId(null);
-          }}
+          onClose={() => setActiveAnnotationId(null)}
           onDelete={(id) => {
             const mark = document.querySelector(`mark[data-highlight-id="${id}"]`);
             if (mark) {
@@ -151,13 +119,13 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
             }
             const dot = document.querySelector(`span.handbook-note-dot[data-highlight-id="${id}"]`);
             dot?.remove();
-            setActiveHighlightId(null);
+            setActiveAnnotationId(null);
           }}
         />
       )}
       {activeNoteId && noteDotRect && (
         <NoteTooltip
-          highlightId={activeNoteId}
+          annotationId={activeNoteId}
           anchorRect={noteDotRect}
           onClose={() => setActiveNoteId(null)}
           onEdit={() => {
@@ -165,7 +133,7 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
               `mark[data-highlight-id="${activeNoteId}"]`,
             ) as HTMLElement | null;
             setMarkRect(mark?.getBoundingClientRect() ?? noteDotRect);
-            setActiveHighlightId(activeNoteId);
+            setActiveAnnotationId(activeNoteId);
             setActiveNoteId(null);
           }}
         />
