@@ -91,3 +91,55 @@ describe('useAnnotationStore', () => {
     expect(useAnnotationStore.getState().showAnnotations).toBe(false);
   });
 });
+
+describe('unified annotation fields', () => {
+  it('addAnnotation stores anchorContext, tagIds, and connectionUrl', () => {
+    const store = useAnnotationStore.getState();
+    const id = store.addAnnotation({
+      docId: '/docs/test/page',
+      type: 'highlight',
+      text: 'selected text',
+      anchorContext: 'before|||selected text|||after',
+      tagIds: ['tag-1'],
+      note: 'my note',
+      connectionUrl: 'https://example.com',
+    });
+    const a = useAnnotationStore.getState().annotations.find((x) => x.id === id)!;
+    expect(a.anchorContext).toBe('before|||selected text|||after');
+    expect(a.tagIds).toEqual(['tag-1']);
+    expect(a.connectionUrl).toBe('https://example.com');
+  });
+
+  it('updateAnnotation can patch tagIds and connectionUrl', () => {
+    const store = useAnnotationStore.getState();
+    const id = store.addAnnotation({
+      docId: '/docs/test',
+      type: 'highlight',
+      text: 'text',
+      anchorContext: '|||text|||',
+      tagIds: [],
+      note: '',
+      connectionUrl: '',
+    });
+    store.updateAnnotation(id, {tagIds: ['t1', 't2'], connectionUrl: '/docs/other'});
+    const a = useAnnotationStore.getState().annotations.find((x) => x.id === id)!;
+    expect(a.tagIds).toEqual(['t1', 't2']);
+    expect(a.connectionUrl).toBe('/docs/other');
+  });
+
+  it('removeAnnotation removes record completely with no ghost', () => {
+    const store = useAnnotationStore.getState();
+    const id = store.addAnnotation({
+      docId: '/docs/test',
+      type: 'highlight',
+      text: 'text',
+      anchorContext: '|||text|||',
+      tagIds: [],
+      note: '',
+      connectionUrl: '',
+    });
+    store.removeAnnotation(id);
+    const found = useAnnotationStore.getState().annotations.find((x) => x.id === id);
+    expect(found).toBeUndefined();
+  });
+});
