@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router';
-import {getHighlights, getTags} from '@/lib/storage';
+import {getTags} from '@/lib/storage';
+import {useAnnotationStore} from '@/store/annotationStore';
 import {Search, FileText, Tag} from 'lucide-react';
 import manifest from '@/data/content-manifest.json';
 
@@ -94,14 +95,14 @@ export function CommandPalette({open, onClose}: CommandPaletteProps) {
 
     // Highlights
     const tags = getTags();
-    for (const h of getHighlights()) {
-      if (h.selectedText.toLowerCase().includes(q) || h.note.toLowerCase().includes(q)) {
+    for (const h of useAnnotationStore.getState().annotations) {
+      if (h.text.toLowerCase().includes(q) || h.note.toLowerCase().includes(q)) {
         const hTags = tags.filter((t) => h.tagIds.includes(t.id)).map((t) => t.name).join(', ');
         filtered.push({
           type: 'highlight',
-          label: h.selectedText.slice(0, 60) + (h.selectedText.length > 60 ? '…' : ''),
-          sublabel: hTags || h.pageUrl,
-          path: h.pageUrl,
+          label: h.text.slice(0, 60) + (h.text.length > 60 ? '…' : ''),
+          sublabel: hTags || h.docId,
+          path: h.docId,
         });
       }
     }

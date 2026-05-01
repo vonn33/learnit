@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {v4 as uuidv4} from 'uuid';
-import {type Tag, getTags, saveTags, getHighlights, saveHighlights} from '@/lib/storage';
+import {type Tag, getTags, saveTags} from '@/lib/storage';
+import {useAnnotationStore} from '@/store/annotationStore';
 import {GripVertical, X} from 'lucide-react';
 
 interface TagManagerProps {
@@ -21,9 +22,9 @@ export function TagManager({onClose}: TagManagerProps) {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    const highlights = getHighlights();
+    const annotations = useAnnotationStore.getState().annotations;
     const counts = new Map<string, number>();
-    for (const hl of highlights) {
+    for (const hl of annotations) {
       for (const id of hl.tagIds) {
         counts.set(id, (counts.get(id) ?? 0) + 1);
       }
@@ -67,9 +68,11 @@ export function TagManager({onClose}: TagManagerProps) {
   function handleDeleteClick(id: string) {
     if (deleteConfirmId === id) {
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
-      // Cascade: remove tag from all highlights
-      const highlights = getHighlights();
-      saveHighlights(highlights.map((h) => ({...h, tagIds: h.tagIds.filter((tid) => tid !== id)})));
+      // Cascade: remove tag from all annotations
+      const store = useAnnotationStore.getState();
+      store.annotations
+        .filter((a) => a.tagIds.includes(id))
+        .forEach((a) => store.updateAnnotation(a.id, {tagIds: a.tagIds.filter((tid) => tid !== id)}));
       persist(tags.filter((t) => t.id !== id));
       setDeleteConfirmId(null);
     } else {
