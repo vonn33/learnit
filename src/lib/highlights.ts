@@ -1,34 +1,4 @@
-import {v4 as uuidv4} from 'uuid';
-import {type Highlight, getHighlights, saveHighlights} from './storage';
-
-// ── CRUD ──
-
-export function createHighlight(
-  data: Omit<Highlight, 'id' | 'createdAt'>,
-): Highlight {
-  const highlight: Highlight = {
-    ...data,
-    id: uuidv4(),
-    createdAt: new Date().toISOString(),
-  };
-  const all = getHighlights();
-  saveHighlights([...all, highlight]);
-  return highlight;
-}
-
-export function updateHighlight(
-  id: string,
-  patch: Partial<Pick<Highlight, 'note' | 'connectionUrl' | 'tagIds'>>,
-): void {
-  const all = getHighlights().map((h) =>
-    h.id === id ? {...h, ...patch} : h,
-  );
-  saveHighlights(all);
-}
-
-export function deleteHighlight(id: string): void {
-  saveHighlights(getHighlights().filter((h) => h.id !== id));
-}
+import {type Annotation} from '@/store/annotationStore';
 
 // ── Anchor context ──
 
@@ -44,7 +14,6 @@ export function buildAnchorContext(range: Range): string {
     container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
   const fullText = parent?.textContent ?? '';
 
-  // Find start/end within the parent's text
   let charStart = 0;
   let charEnd = 0;
 
@@ -74,44 +43,39 @@ export function buildAnchorContext(range: Range): string {
 }
 
 /**
- * Given a page URL, for each highlight on that page apply a <mark>-like span
- * wrapping the selected text. Uses fuzzy context matching to locate text
- * in the rendered DOM.
+ * For each annotation, apply a <mark> wrapping the selected text using fuzzy context matching.
  */
 export function applyHighlightsToDOM(
-  highlights: Highlight[],
+  annotations: Annotation[],
   container: HTMLElement,
   tags: import('./storage').Tag[] = [],
 ): void {
-  for (const hl of highlights) {
+  for (const annotation of annotations) {
     try {
-      applyOneHighlight(hl, container, tags);
+      applyOneHighlight(annotation, container, tags);
     } catch {
-      // Never crash the page — just skip unanchorable highlights
+      // Never crash the page — just skip unanchorable annotations
     }
   }
 }
 
 function applyOneHighlight(
-  hl: Highlight,
+  hl: Annotation,
   container: HTMLElement,
   tags: import('./storage').Tag[] = [],
 ): void {
-  const {selectedText, anchorContext} = hl;
+  const {text: selectedText, anchorContext} = hl;
   if (!selectedText) return;
 
-  // Try exact text match within container
   const parts = anchorContext.split('|||');
   const contextSelected = parts[1] ?? selectedText;
 
-  // Walk all text nodes and find the first occurrence of selectedText
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   let node = walker.nextNode() as Text | null;
 
   while (node) {
     const idx = node.textContent?.indexOf(contextSelected) ?? -1;
     if (idx !== -1) {
-      // Found — wrap with span
       const range = document.createRange();
       range.setStart(node, idx);
       range.setEnd(node, idx + contextSelected.length);
@@ -127,7 +91,6 @@ function applyOneHighlight(
       try {
         range.surroundContents(mark);
       } catch {
-        // Range crosses element boundaries — use extractContents + insertNode
         const fragment = range.extractContents();
         mark.appendChild(fragment);
         range.insertNode(mark);
@@ -141,7 +104,7 @@ function applyOneHighlight(
         mark.insertAdjacentElement('afterend', dot);
       }
 
-      return; // Apply each highlight once
+      return;
     }
     node = walker.nextNode() as Text | null;
   }

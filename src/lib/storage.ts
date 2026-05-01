@@ -8,19 +8,6 @@ export type Tag = {
   color: string; // hex or any CSS colour value
 };
 
-export type Highlight = {
-  id: string;
-  pageUrl: string;
-  selectedText: string;
-  tagIds: string[];
-  note: string;
-  connectionUrl: string;
-  anchorContext: string; // 30-char prefix + selectedText + 30-char suffix
-  charOffsetStart: number;
-  charOffsetEnd: number;
-  createdAt: string; // ISO
-};
-
 export type DiagramLayouts = {
   [pageId: string]: {
     nodes: Array<{id: string; position: {x: number; y: number}; data: {label: string}; type?: string}>;
@@ -43,14 +30,12 @@ export type UserDiagram = {
 };
 
 export type HandbookData = {
-  highlights: Highlight[];
   tags: Tag[];
   diagramLayouts: DiagramLayouts;
   readingProgress: ReadingProgress;
 };
 
 const KEYS = {
-  highlights: 'handbook:highlights',
   tags: 'handbook:tags',
   diagramLayouts: 'handbook:diagram-layouts',
   readingProgress: 'handbook:reading-progress',
@@ -74,20 +59,6 @@ function write<T>(key: string, value: T): void {
   } catch {
     // Storage quota exceeded — silent fail
   }
-}
-
-// ── Highlights ──
-
-export function getHighlights(): Highlight[] {
-  return read<Highlight[]>(KEYS.highlights, []);
-}
-
-export function saveHighlights(highlights: Highlight[]): void {
-  write(KEYS.highlights, highlights);
-}
-
-export function getHighlightsForPage(pageUrl: string): Highlight[] {
-  return getHighlights().filter((h) => h.pageUrl === pageUrl);
 }
 
 // ── Tags ──
