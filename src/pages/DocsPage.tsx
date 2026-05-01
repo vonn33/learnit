@@ -14,6 +14,7 @@ import {MapCanvas} from '@/components/map/MapCanvas';
 import {StagingInbox} from '@/components/map/StagingInbox';
 import {saveReadingProgress, getReadingProgress} from '@/lib/storage';
 import {useMapStore} from '@/store/mapStore';
+import {useWorkspaceStore} from '@/store/workspaceStore';
 import manifest from '@/data/content-manifest.json';
 
 // Glob import all MDX files from local docs directory
@@ -110,6 +111,7 @@ export function DocsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const pathname = location.pathname;
+  const showStagingInbox = useWorkspaceStore((s) => s.showStagingInbox);
 
   // Extract topicId (category) from pathname: /docs/language-learning/...
   const topicId = pathname.split('/')[2] ?? '';
@@ -158,33 +160,32 @@ export function DocsPage() {
     );
   }
 
-  return (
-    <WorkspaceLayout
-      left={
-        <div id="docs-content" className="h-full overflow-y-auto">
-          <ProgressBar pageUrl={pathname} />
-          <div className="flex justify-end px-4 pt-2">
-            <AnnotationToggle />
-          </div>
-          <div className="max-w-3xl mx-auto px-6 py-4">
-            <MDXProvider components={MDX_COMPONENTS}>
-              <article className="prose">
-                <Suspense fallback={<div className="text-[var(--color-muted-foreground)] text-sm">Loading…</div>}>
-                  <Content />
-                </Suspense>
-              </article>
-            </MDXProvider>
-          </div>
-          <DocNav currentPath={pathname} />
-          <AnnotationLayer pageUrl={pathname} topicId={topicId} />
-        </div>
-      }
-      right={
-        <div className="relative h-full">
-          <MapCanvas topicId={topicId} onAnnotationJump={handleMapNodeClick} onNodeDoubleClick={handleMapNodeDoubleClick} />
-          <StagingInbox topicId={topicId} />
-        </div>
-      }
-    />
+  const leftPane = (
+    <div id="docs-content" className="h-full overflow-y-auto">
+      <ProgressBar pageUrl={pathname} />
+      <div className="flex justify-end px-4 pt-2">
+        <AnnotationToggle />
+      </div>
+      <div className="max-w-3xl mx-auto px-6 py-4">
+        <MDXProvider components={MDX_COMPONENTS}>
+          <article className="prose">
+            <Suspense fallback={<div className="text-[var(--color-muted-foreground)] text-sm">Loading…</div>}>
+              <Content />
+            </Suspense>
+          </article>
+        </MDXProvider>
+      </div>
+      <DocNav currentPath={pathname} />
+      <AnnotationLayer pageUrl={pathname} topicId={topicId} />
+    </div>
   );
+
+  const rightPane = (
+    <div className="relative h-full">
+      <MapCanvas topicId={topicId} onAnnotationJump={handleMapNodeClick} onNodeDoubleClick={handleMapNodeDoubleClick} />
+      {showStagingInbox && <StagingInbox topicId={topicId} />}
+    </div>
+  );
+
+  return <WorkspaceLayout left={leftPane} right={rightPane} />;
 }

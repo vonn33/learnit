@@ -163,8 +163,3 @@ Everything is stored in `localStorage` under the `handbook:*` namespace. Nothing
 
 **Export / Import** — Settings page or the Highlights page toolbar. Export produces a JSON snapshot. Import supports merge (add non-duplicate items) or replace (overwrite everything).
 
----
-
-## Previous version
-
-The old Docusaurus version is at `../learnit-deprecapted/`. It can be deleted once you've verified everything works. Data (`handbook:*` localStorage keys) is shared — nothing to migrate.

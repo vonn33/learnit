@@ -2,9 +2,10 @@ import {useRef, useState} from 'react';
 import {useHandbookStore} from '@/store';
 import {downloadExport, importData} from '@/lib/exportImport';
 import {saveHighlights, saveTags, saveUserDiagrams} from '@/lib/storage';
-import {Sun, Moon, Monitor, Download, Upload, Trash2, BookOpen} from 'lucide-react';
+import {Sun, Moon, Monitor, Download, Upload, Trash2, BookOpen, Columns2, FileText, Network} from 'lucide-react';
 import { useAnnotationStore } from '@/store/annotationStore';
 import { useMapStore } from '@/store/mapStore';
+import { useWorkspaceStore, type DefaultLayout } from '@/store/workspaceStore';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -14,13 +15,39 @@ const THEME_OPTIONS: {value: Theme; icon: React.ReactNode; label: string}[] = [
   {value: 'system', icon: <Monitor size={15} />, label: 'System'},
 ];
 
+const LAYOUT_OPTIONS: {value: DefaultLayout; icon: React.ReactNode; label: string; desc: string}[] = [
+  {value: 'split', icon: <Columns2 size={15} />, label: 'Split', desc: 'Reader and concept map side by side'},
+  {value: 'reader-only', icon: <FileText size={15} />, label: 'Reader only', desc: 'Full-width reader, hide concept map'},
+  {value: 'map-only', icon: <Network size={15} />, label: 'Map only', desc: 'Full-width concept map'},
+];
+
 export function SettingsPage() {
   const {theme, setTheme} = useHandbookStore();
+  const defaultLayout = useWorkspaceStore((s) => s.defaultLayout);
+  const showMap = useWorkspaceStore((s) => s.showMap);
+  const showStagingInbox = useWorkspaceStore((s) => s.showStagingInbox);
+  const setDefaultLayout = useWorkspaceStore((s) => s.setDefaultLayout);
+  const setMode = useWorkspaceStore((s) => s.setMode);
+  const setShowMap = useWorkspaceStore((s) => s.setShowMap);
+  const setShowStagingInbox = useWorkspaceStore((s) => s.setShowStagingInbox);
   const [clearConfirm, setClearConfirm] = useState(false);
   const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge');
   const [importStatus, setImportStatus] = useState<string | null>(null);
+
+  function applyLayout(value: DefaultLayout) {
+    setDefaultLayout(value);
+    if (value === 'split') {
+      setMode('split');
+      setShowMap(true);
+    } else if (value === 'reader-only') {
+      setShowMap(false);
+    } else if (value === 'map-only') {
+      setMode('focus-right');
+      setShowMap(true);
+    }
+  }
 
   function handleClear() {
     if (clearConfirm) {
@@ -101,6 +128,65 @@ export function SettingsPage() {
               {label}
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* Layout */}
+      <section className="mb-8">
+        <h2 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-muted-foreground)] mb-3">Layout</h2>
+
+        <div className="rounded-xl border bg-[var(--color-card)] p-4 mb-3">
+          <div className="text-xs text-[var(--color-muted-foreground)] mb-2">Default layout</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {LAYOUT_OPTIONS.map(({value, icon, label, desc}) => (
+              <button
+                key={value}
+                onClick={() => applyLayout(value)}
+                className={[
+                  'flex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-colors',
+                  defaultLayout === value
+                    ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border-transparent'
+                    : 'text-[var(--color-foreground)] hover:bg-[var(--color-accent)]',
+                ].join(' ')}
+              >
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  {icon}
+                  {label}
+                </div>
+                <div className={`text-xs ${defaultLayout === value ? 'opacity-80' : 'text-[var(--color-muted-foreground)]'}`}>
+                  {desc}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl border bg-[var(--color-card)] divide-y">
+          <label className="flex items-center justify-between px-4 py-3 cursor-pointer">
+            <div>
+              <div className="text-sm font-medium text-[var(--color-foreground)]">Show concept map</div>
+              <div className="text-xs text-[var(--color-muted-foreground)]">Render the right-pane map. Disable for full-width reader.</div>
+            </div>
+            <input
+              type="checkbox"
+              checked={showMap}
+              onChange={(e) => setShowMap(e.target.checked)}
+              className="h-4 w-4 cursor-pointer"
+            />
+          </label>
+          <label className="flex items-center justify-between px-4 py-3 cursor-pointer">
+            <div>
+              <div className="text-sm font-medium text-[var(--color-foreground)]">Show staging inbox</div>
+              <div className="text-xs text-[var(--color-muted-foreground)]">Floating tray for captured ideas before placing on the map.</div>
+            </div>
+            <input
+              type="checkbox"
+              checked={showStagingInbox}
+              onChange={(e) => setShowStagingInbox(e.target.checked)}
+              className="h-4 w-4 cursor-pointer"
+              disabled={!showMap}
+            />
+          </label>
         </div>
       </section>
 

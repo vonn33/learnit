@@ -23,10 +23,16 @@ dist-ssr
 *.sln
 *.sw?
 
-# Docusaurus boilerplate (not used by this Vite project)
+# Legacy static assets (kept locally if needed, not tracked)
 static/img/
 static/.DS_Store
 static/.nojekyll
+
+# User content (local only — MDX docs, notes, session plans)
+docs/
+
+# User-generated diagram data
+static/diagrams/
 
 # Worktrees
 .worktrees

@@ -36,4 +36,41 @@ describe('useWorkspaceStore', () => {
     expect(state.mode).toBe('split');
     expect(state.sidebarCollapsed).toBe(false);
   });
+
+  it('starts with map and staging inbox shown by default', () => {
+    const state = useWorkspaceStore.getState();
+    expect(state.showMap).toBe(true);
+    expect(state.showStagingInbox).toBe(true);
+  });
+
+  it('starts with split as default layout', () => {
+    expect(useWorkspaceStore.getState().defaultLayout).toBe('split');
+  });
+
+  it('setShowMap toggles map visibility', () => {
+    useWorkspaceStore.getState().setShowMap(false);
+    expect(useWorkspaceStore.getState().showMap).toBe(false);
+  });
+
+  it('setShowStagingInbox toggles staging inbox visibility', () => {
+    useWorkspaceStore.getState().setShowStagingInbox(false);
+    expect(useWorkspaceStore.getState().showStagingInbox).toBe(false);
+  });
+
+  it('setDefaultLayout updates the persisted preset', () => {
+    useWorkspaceStore.getState().setDefaultLayout('reader-only');
+    expect(useWorkspaceStore.getState().defaultLayout).toBe('reader-only');
+  });
+
+  it('reset restores all new fields too', () => {
+    const s = useWorkspaceStore.getState();
+    s.setShowMap(false);
+    s.setShowStagingInbox(false);
+    s.setDefaultLayout('map-only');
+    s.reset();
+    const after = useWorkspaceStore.getState();
+    expect(after.showMap).toBe(true);
+    expect(after.showStagingInbox).toBe(true);
+    expect(after.defaultLayout).toBe('split');
+  });
 });
