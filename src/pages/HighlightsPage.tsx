@@ -1,21 +1,19 @@
-import {useEffect, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 import {Link} from 'react-router';
 import {
-  type Highlight,
   type Tag,
-  getHighlights,
-  saveHighlights,
   getTags,
 } from '@/lib/storage';
 import {downloadExport, importData} from '@/lib/exportImport';
-import {hexToRgba, deleteHighlight, updateHighlight} from '@/lib/highlights';
+import {hexToRgba} from '@/lib/highlights';
+import {useAnnotationStore, type Annotation} from '@/store/annotationStore';
 import {TagManager} from '@/components/reader/TagManager';
 import {formatPageTitle} from '@/lib/formatters';
 import {Search, Tag as TagIcon, Download, Upload, X} from 'lucide-react';
 
 export function HighlightsPage() {
-  const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
+  const annotations = useAnnotationStore((s) => s.annotations);
+  const [tags, setTags] = useState<Tag[]>(() => getTags());
   const [query, setQuery] = useState('');
   const [activeTagId, setActiveTagId] = useState<string | null>(null);
   const [showTagManager, setShowTagManager] = useState(false);
@@ -23,34 +21,23 @@ export function HighlightsPage() {
   const [editNote, setEditNote] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function reload() {
-    setHighlights(getHighlights());
-    setTags(getTags());
-  }
-
-  useEffect(() => {
-    reload();
-  }, []);
-
-  const filtered = highlights.filter((h) => {
+  const filtered = annotations.filter((h) => {
     const matchesTag = !activeTagId || h.tagIds.includes(activeTagId);
     const q = query.toLowerCase();
     const matchesQuery =
       !q ||
-      h.selectedText.toLowerCase().includes(q) ||
+      h.text.toLowerCase().includes(q) ||
       h.note.toLowerCase().includes(q);
     return matchesTag && matchesQuery;
   });
 
   function handleDelete(id: string) {
-    deleteHighlight(id);
-    reload();
+    useAnnotationStore.getState().removeAnnotation(id);
   }
 
   function handleSaveNote(id: string) {
-    updateHighlight(id, {note: editNote});
+    useAnnotationStore.getState().updateAnnotation(id, {note: editNote});
     setEditingId(null);
-    reload();
   }
 
   function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -61,7 +48,6 @@ export function HighlightsPage() {
       try {
         const data = JSON.parse(reader.result as string);
         importData(data, 'merge');
-        reload();
       } catch {
         alert('Invalid file format.');
       }
@@ -76,7 +62,7 @@ export function HighlightsPage() {
         <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
           Highlights
           <span className="ml-2 text-sm font-normal text-[var(--color-muted-foreground)]">
-            {highlights.length}
+            {annotations.length}
           </span>
         </h1>
         <div className="flex items-center gap-2">
@@ -108,7 +94,7 @@ export function HighlightsPage() {
       {/* Tag Manager panel */}
       {showTagManager && (
         <div className="mb-6 p-4 rounded-xl border bg-[var(--color-card)]">
-          <TagManager onClose={() => {setShowTagManager(false); reload();}} />
+          <TagManager onClose={() => {setShowTagManager(false); setTags(getTags());}} />
         </div>
       )}
 
@@ -155,7 +141,7 @@ export function HighlightsPage() {
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-[var(--color-muted-foreground)] text-sm">
-          {highlights.length === 0
+          {annotations.length === 0
             ? 'No highlights yet. Select text on a doc page to create one.'
             : 'No highlights match your filter.'}
         </div>
@@ -188,10 +174,10 @@ export function HighlightsPage() {
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <Link
-                        to={h.pageUrl}
+                        to={h.docId}
                         className="text-[10px] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] no-underline"
                       >
-                        {formatPageTitle(h.pageUrl)}
+                        {formatPageTitle(h.docId)}
                       </Link>
                       <button
                         onClick={() => handleDelete(h.id)}
@@ -207,7 +193,7 @@ export function HighlightsPage() {
                     className="text-sm leading-relaxed mb-2 pl-2 border-l-2 italic text-[var(--color-foreground)]"
                     style={{borderColor: primaryColor + '80'}}
                   >
-                    {h.selectedText}
+                    {h.text}
                   </blockquote>
 
                   {editingId === h.id ? (
