@@ -6,7 +6,7 @@ import {ThemeProvider} from '@/components/layout/ThemeProvider';
 import {Shell} from '@/components/layout/Shell';
 import {HomePage} from '@/pages/HomePage';
 import {DocsPage} from '@/pages/DocsPage';
-import {HighlightsPage} from '@/pages/HighlightsPage';
+import {AnnotationsPage} from '@/pages/AnnotationsPage';
 import {DiagramsPage} from '@/pages/DiagramsPage';
 import {SettingsPage} from '@/pages/SettingsPage';
 import ContentManagementPage from '@/pages/ContentManagementPage';
@@ -35,7 +35,7 @@ createRoot(document.getElementById('root')!).render(
           <Route element={<Shell />}>
             <Route index element={<HomePage />} />
             <Route path="docs/*" element={<DocsPage />} />
-            <Route path="annotations" element={<HighlightsPage />} />
+            <Route path="annotations" element={<AnnotationsPage />} />
             <Route path="diagrams/*" element={<DiagramsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="manage" element={<ContentManagementPage />} />

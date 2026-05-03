@@ -116,7 +116,7 @@ function DeleteModal({
             className="w-full px-3 py-2 text-sm border rounded hover:bg-[var(--color-accent)] text-left"
           >
             <div className="font-medium">Delete document, keep annotations</div>
-            <div className="text-xs opacity-70">Annotations stay in HighlightsPage as detached</div>
+            <div className="text-xs opacity-70">Annotations stay in AnnotationsPage as detached</div>
           </button>
         </div>
         <div className="flex justify-end">

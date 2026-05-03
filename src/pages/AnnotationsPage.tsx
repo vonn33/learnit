@@ -11,7 +11,7 @@ import {useDocStore} from '@/store/docStore';
 import {TagManager} from '@/components/reader/TagManager';
 import {Search, Tag as TagIcon, Download, Upload, X} from 'lucide-react';
 
-export function HighlightsPage() {
+export function AnnotationsPage() {
   const annotations = useAnnotationStore((s) => s.annotations);
   const docs = useDocStore((s) => s.docs);
   const [tags, setTags] = useState<Tag[]>(() => getTags());
