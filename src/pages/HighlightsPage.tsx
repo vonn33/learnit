@@ -7,12 +7,13 @@ import {
 import {downloadExport, importData} from '@/lib/exportImport';
 import {hexToRgba} from '@/lib/highlights';
 import {useAnnotationStore, type Annotation} from '@/store/annotationStore';
+import {useDocStore} from '@/store/docStore';
 import {TagManager} from '@/components/reader/TagManager';
-import {formatPageTitle} from '@/lib/formatters';
 import {Search, Tag as TagIcon, Download, Upload, X} from 'lucide-react';
 
 export function HighlightsPage() {
   const annotations = useAnnotationStore((s) => s.annotations);
+  const docs = useDocStore((s) => s.docs);
   const [tags, setTags] = useState<Tag[]>(() => getTags());
   const [query, setQuery] = useState('');
   const [activeTagId, setActiveTagId] = useState<string | null>(null);
@@ -173,12 +174,20 @@ export function HighlightsPage() {
                       )}
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <Link
-                        to={h.docId}
-                        className="text-[10px] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] no-underline"
-                      >
-                        {formatPageTitle(h.docId)}
-                      </Link>
+                      {(() => {
+                        const doc = docs.find((d) => d.id === h.docId);
+                        if (!doc) return (
+                          <span className="text-[10px] text-[var(--color-muted-foreground)]">Detached</span>
+                        );
+                        return (
+                          <Link
+                            to={`/docs/${doc.project}/${doc.section}/${doc.slug}`}
+                            className="text-[10px] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] no-underline"
+                          >
+                            {doc.title}
+                          </Link>
+                        );
+                      })()}
                       <button
                         onClick={() => handleDelete(h.id)}
                         className="p-0.5 text-[var(--color-muted-foreground)] hover:text-red-400 transition-colors"
