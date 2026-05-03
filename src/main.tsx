@@ -9,6 +9,7 @@ import {DocsPage} from '@/pages/DocsPage';
 import {HighlightsPage} from '@/pages/HighlightsPage';
 import {DiagramsPage} from '@/pages/DiagramsPage';
 import {SettingsPage} from '@/pages/SettingsPage';
+import ContentManagementPage from '@/pages/ContentManagementPage';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="highlights" element={<HighlightsPage />} />
             <Route path="diagrams/*" element={<DiagramsPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="manage" element={<ContentManagementPage />} />
             <Route path="*" element={<Navigate to="/docs" replace />} />
           </Route>
         </Routes>

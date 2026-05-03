@@ -1,6 +1,6 @@
 import {useState} from 'react';
-import {NavLink} from 'react-router';
-import {ChevronDown, ChevronRight, ChevronLeft, Upload} from 'lucide-react';
+import {NavLink, Link} from 'react-router';
+import {ChevronDown, ChevronRight, ChevronLeft, Upload, Settings2} from 'lucide-react';
 import manifest from '@/data/content-manifest.json';
 import {useWorkspaceStore} from '@/store/workspaceStore';
 import {ImportWizard} from '@/components/import/ImportWizard';
@@ -111,6 +111,12 @@ export function Sidebar({className = ''}: {className?: string}) {
             >
               <Upload className="size-4" /> Import .md
             </button>
+            <Link
+              to="/manage"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--color-accent)] rounded mb-3"
+            >
+              <Settings2 className="size-4" /> Manage content
+            </Link>
           </div>
           <ImportWizard open={importOpen} onClose={() => setImportOpen(false)} />
           {Object.entries(typedManifest).map(([key, category]) => (
