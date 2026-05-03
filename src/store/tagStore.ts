@@ -30,7 +30,14 @@ function tagToRow(t: NewTag): Pick<TagRow, 'label' | 'color'> {
 export const useTagStore = create<TagStore>((set) => ({
   tags: [],
 
-  fetchAll: async () => {},
+  fetchAll: async () => {
+    let { data } = await supabase.from('tags').select('*').order('created_at');
+    if (data && data.length === 0) {
+      await supabase.from('tags').insert({ label: 'Key point', color: '#facc15' });
+      ({ data } = await supabase.from('tags').select('*').order('created_at'));
+    }
+    set({ tags: (data ?? []).map(rowToTag) });
+  },
   addTag: async () => { throw new Error('not implemented'); },
   updateTag: async () => {},
   removeTag: async () => {},
