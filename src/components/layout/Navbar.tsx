@@ -1,5 +1,5 @@
 import {Link, useLocation} from 'react-router';
-import {Sun, Moon, Monitor, BookOpen, Tag, GitBranch, Settings, Search} from 'lucide-react';
+import {Sun, Moon, Monitor, BookOpen, Tag, GitBranch, Settings, Search, Library} from 'lucide-react';
 import {useHandbookStore} from '@/store';
 
 type Theme = 'dark' | 'light' | 'system';
@@ -21,6 +21,7 @@ export function Navbar({onSearchOpen}: {onSearchOpen: () => void}) {
   }
 
   const navLinks = [
+    {to: '/manage', icon: <Library size={15} />, label: 'Library'},
     {to: '/highlights', icon: <Tag size={15} />, label: 'Highlights'},
     {to: '/diagrams', icon: <GitBranch size={15} />, label: 'Diagrams'},
     {to: '/settings', icon: <Settings size={15} />, label: 'Settings'},
