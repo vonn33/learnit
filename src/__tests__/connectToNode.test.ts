@@ -59,7 +59,7 @@ describe('connect-to-node store interactions', () => {
       connectionUrl: '',
     });
     useMapStore.getState().initMap('topic-1');
-    const nodeId = useMapStore.getState().addNode('topic-1', {
+    const nodeId = await useMapStore.getState().addNode('topic-1', {
       label: 'Test Node',
       type: 'concept',
       status: 'placed',
@@ -68,7 +68,7 @@ describe('connect-to-node store interactions', () => {
 
     // Simulate NotePanel handleConnect
     await useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
-    useMapStore.getState().updateNode('topic-1', nodeId, {annotationId});
+    await useMapStore.getState().updateNode('topic-1', nodeId, {annotationId});
 
     const annotation = useAnnotationStore.getState().annotations[0];
     const node = useMapStore.getState().maps['topic-1'].nodes[0];
@@ -88,18 +88,18 @@ describe('connect-to-node store interactions', () => {
       connectionUrl: '',
     });
     useMapStore.getState().initMap('topic-1');
-    const nodeId = useMapStore.getState().addNode('topic-1', {
+    const nodeId = await useMapStore.getState().addNode('topic-1', {
       label: 'Node',
       type: 'concept',
       status: 'placed',
       position: {x: 0, y: 0},
     });
     await useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
-    useMapStore.getState().updateNode('topic-1', nodeId, {annotationId});
+    await useMapStore.getState().updateNode('topic-1', nodeId, {annotationId});
 
     // Simulate NotePanel handleDisconnect
     await useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: undefined});
-    useMapStore.getState().updateNode('topic-1', nodeId, {annotationId: undefined});
+    await useMapStore.getState().updateNode('topic-1', nodeId, {annotationId: undefined});
 
     const annotation = useAnnotationStore.getState().annotations[0];
     const node = useMapStore.getState().maps['topic-1'].nodes[0];
@@ -119,13 +119,13 @@ describe('connect-to-node store interactions', () => {
       connectionUrl: '',
     });
     useMapStore.getState().initMap('topic-1');
-    const nodeId1 = useMapStore.getState().addNode('topic-1', {
+    const nodeId1 = await useMapStore.getState().addNode('topic-1', {
       label: 'Node A',
       type: 'concept',
       status: 'placed',
       position: {x: 0, y: 0},
     });
-    const nodeId2 = useMapStore.getState().addNode('topic-1', {
+    const nodeId2 = await useMapStore.getState().addNode('topic-1', {
       label: 'Node B',
       type: 'concept',
       status: 'placed',
@@ -133,12 +133,12 @@ describe('connect-to-node store interactions', () => {
     });
 
     await useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId1});
-    useMapStore.getState().updateNode('topic-1', nodeId1, {annotationId});
+    await useMapStore.getState().updateNode('topic-1', nodeId1, {annotationId});
 
     // Reconnect to node 2
     await useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId2});
-    useMapStore.getState().updateNode('topic-1', nodeId1, {annotationId: undefined});
-    useMapStore.getState().updateNode('topic-1', nodeId2, {annotationId});
+    await useMapStore.getState().updateNode('topic-1', nodeId1, {annotationId: undefined});
+    await useMapStore.getState().updateNode('topic-1', nodeId2, {annotationId});
 
     expect(useAnnotationStore.getState().annotations[0].mapNodeId).toBe(nodeId2);
     expect(useMapStore.getState().maps['topic-1'].nodes.find((n) => n.id === nodeId1)?.annotationId).toBeUndefined();

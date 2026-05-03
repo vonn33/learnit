@@ -173,7 +173,7 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
       note: '',
       connectionUrl: '',
     });
-    const nodeId = addNode(topicId, {
+    const nodeId = await addNode(topicId, {
       label: selectedText.slice(0, 60),
       type: 'concept',
       status: 'placed',
