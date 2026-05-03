@@ -65,8 +65,30 @@ export const useDocStore = create<DocStore>((set, get) => ({
     set((s) => ({ docs: [data as Doc, ...s.docs] }));
     return data as Doc;
   },
-  updateDoc: async () => {},
-  deleteDoc: async () => {},
+  updateDoc: async (id, patch) => {
+    const { error } = await supabase.from('docs').update(patch).eq('id', id);
+    if (error) {
+      set({ error: error.message });
+      return;
+    }
+    set((s) => ({
+      docs: s.docs.map((d) => (d.id === id ? { ...d, ...patch } : d)),
+    }));
+  },
+
+  deleteDoc: async (id, mode) => {
+    if (mode === 'cascade') {
+      await supabase.from('annotations').delete().eq('doc_id', id);
+    } else {
+      await supabase.from('annotations').update({ doc_id: null }).eq('doc_id', id);
+    }
+    const { error } = await supabase.from('docs').delete().eq('id', id);
+    if (error) {
+      set({ error: error.message });
+      return;
+    }
+    set((s) => ({ docs: s.docs.filter((d) => d.id !== id) }));
+  },
   subscribeRealtime: () => () => {},
   reset: () => {
     set({ docs: [], loading: false, error: null, activeContent: null });

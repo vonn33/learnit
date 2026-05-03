@@ -89,4 +89,65 @@ describe('useDocStore', () => {
     });
     expect(result.id).toBe('new');
   });
+
+  it('updateDoc patches doc in state', async () => {
+    const { supabase } = await import('@/lib/supabase');
+    useDocStore.setState({
+      docs: [{ id: '1', title: 'Old', slug: 'a', project: 'p', section: 's', content_md: '', abstract: '', toc_json: [], word_count: 0, user_id: null, created_at: '', updated_at: '' }],
+    });
+    (supabase.from as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+      update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+    } as never);
+
+    await useDocStore.getState().updateDoc('1', { title: 'New' });
+    expect(useDocStore.getState().docs[0].title).toBe('New');
+  });
+
+  it('deleteDoc cascade removes doc from state', async () => {
+    const { supabase } = await import('@/lib/supabase');
+    useDocStore.setState({
+      docs: [{ id: '1', title: 'X', slug: 'x', project: 'p', section: 's', content_md: '', abstract: '', toc_json: [], word_count: 0, user_id: null, created_at: '', updated_at: '' }],
+    });
+    let deleteFromCalled = '';
+    (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
+      if (table === 'annotations') {
+        return { delete: () => ({ eq: () => Promise.resolve({ error: null }) }) };
+      }
+      if (table === 'docs') {
+        deleteFromCalled = table;
+        return { delete: () => ({ eq: () => Promise.resolve({ error: null }) }) };
+      }
+      return {} as never;
+    });
+
+    await useDocStore.getState().deleteDoc('1', 'cascade');
+    expect(deleteFromCalled).toBe('docs');
+    expect(useDocStore.getState().docs).toEqual([]);
+  });
+
+  it('deleteDoc retain nullifies annotations doc_id', async () => {
+    const { supabase } = await import('@/lib/supabase');
+    useDocStore.setState({
+      docs: [{ id: '1', title: 'X', slug: 'x', project: 'p', section: 's', content_md: '', abstract: '', toc_json: [], word_count: 0, user_id: null, created_at: '', updated_at: '' }],
+    });
+    let updateCalledWith: unknown = null;
+    (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
+      if (table === 'annotations') {
+        return {
+          update: (patch: unknown) => {
+            updateCalledWith = patch;
+            return { eq: () => Promise.resolve({ error: null }) };
+          },
+        };
+      }
+      if (table === 'docs') {
+        return { delete: () => ({ eq: () => Promise.resolve({ error: null }) }) };
+      }
+      return {} as never;
+    });
+
+    await useDocStore.getState().deleteDoc('1', 'retain');
+    expect(updateCalledWith).toEqual({ doc_id: null });
+    expect(useDocStore.getState().docs).toEqual([]);
+  });
 });
