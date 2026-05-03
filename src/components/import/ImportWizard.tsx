@@ -27,14 +27,14 @@ export function ImportWizard({ open, onClose }: { open: boolean; onClose: () => 
     setSubmitting(true);
     setError(null);
     try {
-      let firstSlug = '';
+      let firstPath = '';
       for (const p of parsed) {
         const created = await createDoc(toNewDoc(p));
-        if (!firstSlug) firstSlug = created.slug;
+        if (!firstPath) firstPath = `/docs/${created.project}/${created.section}/${created.slug}`;
       }
       setParsed([]);
       onClose();
-      if (firstSlug) navigate(`/docs/${firstSlug}`);
+      if (firstPath) navigate(firstPath);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Import failed');
     } finally {
