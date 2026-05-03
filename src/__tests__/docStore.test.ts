@@ -55,4 +55,20 @@ describe('useDocStore', () => {
     expect(useDocStore.getState().docs).toEqual(fakeDocs);
     expect(useDocStore.getState().loading).toBe(false);
   });
+
+  it('fetchContent loads single doc by slug', async () => {
+    const { supabase } = await import('@/lib/supabase');
+    const doc = { id: '1', title: 'A', slug: 'a', project: 'p', section: 's', content_md: '# Hi', abstract: '', toc_json: [], word_count: 1, user_id: null, created_at: '', updated_at: '' };
+    (supabase.from as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve({ data: doc, error: null }),
+        }),
+      }),
+    } as never);
+
+    const result = await useDocStore.getState().fetchContent('a');
+    expect(result?.content_md).toBe('# Hi');
+    expect(useDocStore.getState().activeContent).toEqual({ slug: 'a', content_md: '# Hi' });
+  });
 });

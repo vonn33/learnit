@@ -42,7 +42,19 @@ export const useDocStore = create<DocStore>((set, get) => ({
       loading: false,
     });
   },
-  fetchContent: async () => null,
+  fetchContent: async (slug) => {
+    const { data, error } = await supabase
+      .from('docs')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+    if (error || !data) {
+      set({ error: error?.message ?? 'Doc not found' });
+      return null;
+    }
+    set({ activeContent: { slug, content_md: data.content_md } });
+    return data as Doc;
+  },
   createDoc: async () => {
     throw new Error('not implemented');
   },
