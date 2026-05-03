@@ -103,9 +103,9 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
   }, [showNoteInput]);
 
   const doHighlight = useCallback(
-    (note = '') => {
+    async (note = '') => {
       if (!savedRange || !selectedText) return;
-      addAnnotation({
+      await addAnnotation({
         type: 'highlight',
         docId: pageUrl,
         text: selectedText,
@@ -134,16 +134,16 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
       }
       if (e.key === 'Enter' && !showNoteInput) {
         e.preventDefault();
-        doHighlight();
+        void doHighlight();
       }
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [visible, showNoteInput, doHighlight]);
 
-  function handleCapture() {
+  async function handleCapture() {
     if (!topicId || !selectedText) return;
-    const annotationId = addAnnotation({
+    const annotationId = await addAnnotation({
       docId: pageUrl,
       type: 'quick-capture',
       text: selectedText,
@@ -162,9 +162,9 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
     setVisible(false);
   }
 
-  function handleAddNode() {
+  async function handleAddNode() {
     if (!topicId || !selectedText) return;
-    const annotationId = addAnnotation({
+    const annotationId = await addAnnotation({
       docId: pageUrl,
       type: 'highlight',
       text: selectedText,
@@ -180,7 +180,7 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
       position: {x: 200, y: 200},
       annotationId,
     });
-    useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
+    await useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
     window.getSelection()?.removeAllRanges();
     setVisible(false);
   }
@@ -189,9 +189,9 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
     setShowNodePicker(true);
   }
 
-  function handleNodeSelected(nodeId: string) {
+  async function handleNodeSelected(nodeId: string) {
     if (!topicId || !selectedText) return;
-    const annotationId = addAnnotation({
+    const annotationId = await addAnnotation({
       docId: pageUrl,
       type: 'highlight',
       text: selectedText,
@@ -201,7 +201,7 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
       connectionUrl: '',
     });
     useMapStore.getState().updateNode(topicId, nodeId, {annotationId});
-    useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
+    await useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
     setShowNodePicker(false);
     window.getSelection()?.removeAllRanges();
     setVisible(false);

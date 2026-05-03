@@ -65,14 +65,16 @@ export function TagManager({onClose}: TagManagerProps) {
     setEditingId(null);
   }
 
-  function handleDeleteClick(id: string) {
+  async function handleDeleteClick(id: string) {
     if (deleteConfirmId === id) {
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
       // Cascade: remove tag from all annotations
       const store = useAnnotationStore.getState();
-      store.annotations
-        .filter((a) => a.tagIds.includes(id))
-        .forEach((a) => store.updateAnnotation(a.id, {tagIds: a.tagIds.filter((tid) => tid !== id)}));
+      await Promise.all(
+        store.annotations
+          .filter((a) => a.tagIds.includes(id))
+          .map((a) => store.updateAnnotation(a.id, {tagIds: a.tagIds.filter((tid) => tid !== id)})),
+      );
       persist(tags.filter((t) => t.id !== id));
       setDeleteConfirmId(null);
     } else {

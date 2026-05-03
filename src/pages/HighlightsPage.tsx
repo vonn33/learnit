@@ -31,12 +31,12 @@ export function HighlightsPage() {
     return matchesTag && matchesQuery;
   });
 
-  function handleDelete(id: string) {
-    useAnnotationStore.getState().removeAnnotation(id);
+  async function handleDelete(id: string) {
+    await useAnnotationStore.getState().removeAnnotation(id);
   }
 
-  function handleSaveNote(id: string) {
-    useAnnotationStore.getState().updateAnnotation(id, {note: editNote});
+  async function handleSaveNote(id: string) {
+    await useAnnotationStore.getState().updateAnnotation(id, {note: editNote});
     setEditingId(null);
   }
 

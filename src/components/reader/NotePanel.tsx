@@ -57,31 +57,31 @@ export function NotePanel({annotationId, topicId, anchorRect: _anchorRect, tags,
     };
   }, []);
 
-  function save() {
-    updateAnnotation(annotationId, {note, connectionUrl});
+  async function save() {
+    await updateAnnotation(annotationId, {note, connectionUrl});
     setSavedAt(Date.now());
     setTimeout(() => setSavedAt(0), 1500);
   }
 
-  function handleConnect(nodeId: string) {
+  async function handleConnect(nodeId: string) {
     if (!topicId) return;
-    useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
+    await useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
     useMapStore.getState().updateNode(topicId, nodeId, {annotationId});
     setMapNodeId(nodeId);
     setShowNodePicker(false);
   }
 
-  function handleDisconnect() {
+  async function handleDisconnect() {
     if (!topicId || !mapNodeId) return;
-    useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: undefined});
+    await useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: undefined});
     useMapStore.getState().updateNode(topicId, mapNodeId, {annotationId: undefined});
     setMapNodeId(null);
   }
 
-  function handleDeleteClick() {
+  async function handleDeleteClick() {
     if (deleteConfirm) {
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
-      removeAnnotation(annotationId);
+      await removeAnnotation(annotationId);
       onDelete(annotationId);
     } else {
       setDeleteConfirm(true);
