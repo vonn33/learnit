@@ -1,9 +1,11 @@
 import {useCallback, useEffect, useRef} from 'react';
 import {useLocation, Navigate, useNavigate} from 'react-router';
+import {List, ListX} from 'lucide-react';
 import {RuntimeMdx} from '@/components/mdx/RuntimeMdx';
 import {AnnotationLayer} from '@/components/reader/AnnotationLayer';
 import {AnnotationToggle} from '@/components/reader/AnnotationToggle';
 import {DocNav} from '@/components/reader/DocNav';
+import {TOCPanel} from '@/components/reader/TOCPanel';
 import {WorkspaceLayout} from '@/components/workspace/WorkspaceLayout';
 import {MapCanvas} from '@/components/map/MapCanvas';
 import {StagingInbox} from '@/components/map/StagingInbox';
@@ -86,6 +88,8 @@ export function DocsPage() {
   const navigate = useNavigate();
   const pathname = location.pathname;
   const showStagingInbox = useWorkspaceStore((s) => s.showStagingInbox);
+  const showToc = useWorkspaceStore((s) => s.showToc);
+  const toggleToc = useWorkspaceStore((s) => s.toggleToc);
 
   const docs = useDocStore((s) => s.docs);
   const activeContent = useDocStore((s) => s.activeContent);
@@ -181,20 +185,38 @@ export function DocsPage() {
   // Content not yet fetched (or fetching a different slug).
   const contentReady = activeContent && activeContent.slug === slug;
 
+  const tocEntries = meta?.toc_json ?? [];
+  const hasToc = tocEntries.length > 0;
+
   const leftPane = (
     <div id="docs-content" className="h-full overflow-y-auto">
       <ProgressBar pageUrl={pathname} />
-      <div className="flex justify-end px-4 pt-2">
+      <div className="flex justify-end items-center gap-1 px-4 pt-2">
         <AnnotationToggle />
+        {hasToc && (
+          <button
+            onClick={toggleToc}
+            aria-label="Toggle table of contents"
+            title={showToc ? 'Hide table of contents' : 'Show table of contents'}
+            className="flex items-center gap-1.5 px-2 py-1 rounded text-xs text-foreground/60 hover:text-foreground hover:bg-muted transition-colors"
+          >
+            {showToc ? <List size={14} /> : <ListX size={14} />}
+          </button>
+        )}
       </div>
-      <div className="max-w-3xl mx-auto px-6 py-4">
-        <article className="prose">
+      <div className="max-w-5xl mx-auto px-6 py-4 flex gap-6">
+        <article className="prose flex-1 min-w-0">
           {contentReady ? (
             <RuntimeMdx source={activeContent.content_md} />
           ) : (
             <div className="text-[var(--color-muted-foreground)] text-sm">Loading…</div>
           )}
         </article>
+        {showToc && hasToc && (
+          <aside className="hidden lg:block w-56 shrink-0 sticky top-4 self-start">
+            <TOCPanel toc={tocEntries} />
+          </aside>
+        )}
       </div>
       <DocNav currentPath={pathname} />
       <AnnotationLayer pageUrl={pathname} topicId={topicId} />

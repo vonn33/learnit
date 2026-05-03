@@ -10,12 +10,14 @@ interface WorkspaceState {
   sidebarCollapsed: boolean;
   showMap: boolean;
   showStagingInbox: boolean;
+  showToc: boolean;
   defaultLayout: DefaultLayout;
   setMode: (mode: PaneMode) => void;
   setSplitPercent: (pct: number) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setShowMap: (show: boolean) => void;
   setShowStagingInbox: (show: boolean) => void;
+  toggleToc: () => void;
   setDefaultLayout: (layout: DefaultLayout) => void;
   reset: () => void;
 }
@@ -26,6 +28,7 @@ const DEFAULTS = {
   sidebarCollapsed: false,
   showMap: true,
   showStagingInbox: true,
+  showToc: true,
   defaultLayout: 'split' as DefaultLayout,
 };
 
@@ -38,6 +41,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       setSidebarCollapsed: (sidebarCollapsed) => set({sidebarCollapsed}),
       setShowMap: (showMap) => set({showMap}),
       setShowStagingInbox: (showStagingInbox) => set({showStagingInbox}),
+      toggleToc: () => set((s) => ({showToc: !s.showToc})),
       setDefaultLayout: (defaultLayout) => set({defaultLayout}),
       reset: () => set(DEFAULTS),
     }),

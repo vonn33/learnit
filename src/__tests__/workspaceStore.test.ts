@@ -73,4 +73,14 @@ describe('useWorkspaceStore', () => {
     expect(after.showStagingInbox).toBe(true);
     expect(after.defaultLayout).toBe('split');
   });
+
+  it('starts with showToc true by default', () => {
+    expect(useWorkspaceStore.getState().showToc).toBe(true);
+  });
+
+  it('toggleToc flips showToc', () => {
+    const initial = useWorkspaceStore.getState().showToc;
+    useWorkspaceStore.getState().toggleToc();
+    expect(useWorkspaceStore.getState().showToc).toBe(!initial);
+  });
 });
