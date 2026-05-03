@@ -1,4 +1,5 @@
 import {type Annotation} from '@/store/annotationStore';
+import {type Tag} from '@/store/tagStore';
 
 // ── Anchor context ──
 
@@ -48,7 +49,7 @@ export function buildAnchorContext(range: Range): string {
 export function applyHighlightsToDOM(
   annotations: Annotation[],
   container: HTMLElement,
-  tags: import('./storage').Tag[] = [],
+  tags: Tag[] = [],
 ): void {
   for (const annotation of annotations) {
     try {
@@ -92,7 +93,7 @@ function textNodeAtOffset(
 function applyOneHighlight(
   hl: Annotation,
   container: HTMLElement,
-  tags: import('./storage').Tag[] = [],
+  tags: Tag[] = [],
 ): void {
   const {text: selectedText, anchorContext} = hl;
   if (!selectedText) return;
@@ -156,7 +157,7 @@ const DEFAULT_BORDER = 'rgba(234, 179, 8, 0.8)';
 
 export function getHighlightColorForTags(
   tagIds: string[],
-  tags: import('./storage').Tag[],
+  tags: Tag[],
 ): {bg: string; border: string} {
   if (tagIds.length === 0) return {bg: DEFAULT_COLOR, border: DEFAULT_BORDER};
   const tag = tags.find((t) => t.id === tagIds[0]);

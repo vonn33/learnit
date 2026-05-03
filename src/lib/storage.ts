@@ -2,12 +2,6 @@
  * localStorage helpers — all data keyed under 'handbook:*' namespace.
  */
 
-export type Tag = {
-  id: string;
-  name: string;
-  color: string; // hex or any CSS colour value
-};
-
 export type DiagramLayouts = {
   [pageId: string]: {
     nodes: Array<{id: string; position: {x: number; y: number}; data: {label: string}; type?: string}>;
@@ -30,13 +24,11 @@ export type UserDiagram = {
 };
 
 export type HandbookData = {
-  tags: Tag[];
   diagramLayouts: DiagramLayouts;
   readingProgress: ReadingProgress;
 };
 
 const KEYS = {
-  tags: 'handbook:tags',
   diagramLayouts: 'handbook:diagram-layouts',
   readingProgress: 'handbook:reading-progress',
   userDiagrams: 'handbook:user-diagrams',
@@ -59,21 +51,6 @@ function write<T>(key: string, value: T): void {
   } catch {
     // Storage quota exceeded — silent fail
   }
-}
-
-// ── Tags ──
-
-const DEFAULT_TAGS: Tag[] = [
-  {id: 'default-key-point', name: 'Key point', color: '#facc15'},
-];
-
-export function getTags(): Tag[] {
-  const stored = read<Tag[]>(KEYS.tags, []);
-  return stored.length > 0 ? stored : DEFAULT_TAGS;
-}
-
-export function saveTags(tags: Tag[]): void {
-  write(KEYS.tags, tags);
 }
 
 // ── Diagram layouts ──

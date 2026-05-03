@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {type Tag} from '@/lib/storage';
+import {type Tag} from '@/store/tagStore';
 import {hexToRgba} from '@/lib/highlights';
 import {X, Check} from 'lucide-react';
 import {useAnnotationStore} from '@/store/annotationStore';
