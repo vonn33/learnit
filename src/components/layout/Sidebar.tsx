@@ -1,8 +1,9 @@
 import {useState} from 'react';
 import {NavLink} from 'react-router';
-import {ChevronDown, ChevronRight, ChevronLeft} from 'lucide-react';
+import {ChevronDown, ChevronRight, ChevronLeft, Upload} from 'lucide-react';
 import manifest from '@/data/content-manifest.json';
 import {useWorkspaceStore} from '@/store/workspaceStore';
+import {ImportWizard} from '@/components/import/ImportWizard';
 
 type DocEntry = string;
 type Section = {label: string; link: string; docs: DocEntry[]};
@@ -91,6 +92,7 @@ function CategoryItem({categoryKey, category}: {categoryKey: string; category: C
 export function Sidebar({className = ''}: {className?: string}) {
   const collapsed = useWorkspaceStore((s) => s.sidebarCollapsed);
   const setSidebarCollapsed = useWorkspaceStore((s) => s.setSidebarCollapsed);
+  const [importOpen, setImportOpen] = useState(false);
 
   return (
     <aside
@@ -102,6 +104,15 @@ export function Sidebar({className = ''}: {className?: string}) {
     >
       {!collapsed && (
         <div className="flex-1">
+          <div className="px-2">
+            <button
+              onClick={() => setImportOpen(true)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded mb-3"
+            >
+              <Upload className="size-4" /> Import .md
+            </button>
+          </div>
+          <ImportWizard open={importOpen} onClose={() => setImportOpen(false)} />
           {Object.entries(typedManifest).map(([key, category]) => (
             <CategoryItem key={key} categoryKey={key} category={category} />
           ))}
