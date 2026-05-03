@@ -2,13 +2,8 @@ import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router';
 import {getTags} from '@/lib/storage';
 import {useAnnotationStore} from '@/store/annotationStore';
+import {useDocStore, type Doc} from '@/store/docStore';
 import {Search, FileText, Tag} from 'lucide-react';
-import manifest from '@/data/content-manifest.json';
-
-type Manifest = Record<
-  string,
-  {label: string; sections: Record<string, {label: string; docs: string[]}>}
->;
 
 type Result = {
   type: 'doc' | 'highlight';
@@ -17,22 +12,20 @@ type Result = {
   path: string;
 };
 
-function buildDocResults(): Result[] {
-  const results: Result[] = [];
-  const m = manifest as Manifest;
-  for (const [catKey, cat] of Object.entries(m)) {
-    for (const [secKey, sec] of Object.entries(cat.sections)) {
-      for (const slug of sec.docs) {
-        results.push({
-          type: 'doc',
-          label: slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-          sublabel: `${cat.label} › ${sec.label}`,
-          path: `/docs/${catKey}/${secKey}/${slug}`,
-        });
-      }
-    }
-  }
-  return results;
+function humanize(s: string): string {
+  return s
+    .split('-')
+    .map((w) => (w[0]?.toUpperCase() ?? '') + w.slice(1))
+    .join(' ');
+}
+
+function buildDocResults(docs: Doc[]): Result[] {
+  return docs.map((d) => ({
+    type: 'doc' as const,
+    label: d.title,
+    sublabel: `${humanize(d.project)} › ${humanize(d.section)}`,
+    path: `/docs/${d.project}/${d.section}/${d.slug}`,
+  }));
 }
 
 interface CommandPaletteProps {
@@ -45,6 +38,7 @@ export function CommandPalette({open, onClose}: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Result[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
+  const docs = useDocStore((s) => s.docs);
 
   useEffect(() => {
     if (!open) {setQuery(''); return;}
@@ -76,7 +70,7 @@ export function CommandPalette({open, onClose}: CommandPaletteProps) {
 
   useEffect(() => {
     const q = query.toLowerCase().trim();
-    const docResults = buildDocResults();
+    const docResults = buildDocResults(docs);
 
     if (!q) {
       setResults(docResults.slice(0, 8));
@@ -86,12 +80,22 @@ export function CommandPalette({open, onClose}: CommandPaletteProps) {
 
     const filtered: Result[] = [];
 
-    // Doc pages
-    for (const r of docResults) {
-      if (r.label.toLowerCase().includes(q) || r.sublabel?.toLowerCase().includes(q)) {
+    // Doc pages — match against title, sublabel, and slug/project/section keys
+    docs.forEach((d, i) => {
+      const r = docResults[i];
+      const haystack = [
+        d.title,
+        d.slug,
+        d.project,
+        d.section,
+        r.sublabel ?? '',
+      ]
+        .join(' ')
+        .toLowerCase();
+      if (haystack.includes(q)) {
         filtered.push(r);
       }
-    }
+    });
 
     // Highlights
     const tags = getTags();
@@ -109,7 +113,7 @@ export function CommandPalette({open, onClose}: CommandPaletteProps) {
 
     setResults(filtered.slice(0, 12));
     setActiveIdx(0);
-  }, [query]);
+  }, [query, docs]);
 
   function handleSelect(result: Result) {
     navigate(result.path);
