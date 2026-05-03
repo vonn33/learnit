@@ -219,7 +219,7 @@ export function DocsPage() {
         )}
       </div>
       <DocNav currentPath={pathname} />
-      <AnnotationLayer pageUrl={pathname} topicId={topicId} />
+      <AnnotationLayer pageUrl={meta.id} topicId={topicId} />
     </div>
   );
 
