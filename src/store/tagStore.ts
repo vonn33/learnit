@@ -70,6 +70,43 @@ export const useTagStore = create<TagStore>((set) => ({
     if (error) return;
     set((s) => ({ tags: s.tags.filter((t) => t.id !== id) }));
   },
-  subscribeRealtime: () => () => {},
+  subscribeRealtime: () => {
+    const channel = supabase
+      .channel('tags-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'tags' },
+        (payload) => {
+          const tag = rowToTag(payload.new as TagRow);
+          set((s) =>
+            s.tags.find((t) => t.id === tag.id)
+              ? s
+              : { tags: [...s.tags, tag] },
+          );
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'tags' },
+        (payload) => {
+          const tag = rowToTag(payload.new as TagRow);
+          set((s) => ({
+            tags: s.tags.map((t) => (t.id === tag.id ? tag : t)),
+          }));
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'tags' },
+        (payload) => {
+          const id = (payload.old as { id: string }).id;
+          set((s) => ({ tags: s.tags.filter((t) => t.id !== id) }));
+        },
+      )
+      .subscribe();
+    return () => {
+      channel.unsubscribe();
+    };
+  },
   reset: () => set({ tags: [] }),
 }));
