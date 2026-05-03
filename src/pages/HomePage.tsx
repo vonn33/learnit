@@ -1,13 +1,7 @@
 import {useMemo} from 'react';
 import {Link} from 'react-router';
 import {getReadingProgress} from '@/lib/storage';
-import manifest from '@/data/content-manifest.json';
-
-type ManifestCategory = {
-  label: string;
-  link?: string;
-  sections: Record<string, {label: string; docs: string[]}>;
-};
+import {useDocStore, type Doc} from '@/store/docStore';
 
 type RecentEntry = {
   url: string;
@@ -15,6 +9,13 @@ type RecentEntry = {
   scrollFraction: number;
   lastVisited: string;
 };
+
+function humanize(s: string): string {
+  return s
+    .split('-')
+    .map((w) => (w[0]?.toUpperCase() ?? '') + w.slice(1))
+    .join(' ');
+}
 
 function slugToTitle(slug: string): string {
   return slug
@@ -66,20 +67,20 @@ function RecentCard({entry}: {entry: RecentEntry}) {
 }
 
 function ProjectCard({
-  categoryKey,
-  category,
+  projectKey,
+  sections,
 }: {
-  categoryKey: string;
-  category: ManifestCategory;
+  projectKey: string;
+  sections: Record<string, Doc[]>;
 }) {
-  const sections = Object.entries(category.sections);
-  const totalDocs = sections.reduce((sum, [, s]) => sum + s.docs.length, 0);
+  const sectionEntries = Object.entries(sections);
+  const totalDocs = sectionEntries.reduce((sum, [, docs]) => sum + docs.length, 0);
 
-  // Link to the first doc in the category
-  const firstSection = sections[0];
-  const firstDoc = firstSection?.[1].docs[0];
+  // Link to the first doc in the project
+  const firstSection = sectionEntries[0];
+  const firstDoc = firstSection?.[1][0];
   const href = firstDoc
-    ? `/docs/${categoryKey}/${firstSection[0]}/${firstDoc}`
+    ? `/docs/${projectKey}/${firstSection[0]}/${firstDoc.slug}`
     : '/docs';
 
   return (
@@ -89,17 +90,17 @@ function ProjectCard({
     >
       <div className="flex flex-col gap-1">
         <span className="font-semibold text-[var(--color-card-foreground)]">
-          {category.label}
+          {humanize(projectKey)}
         </span>
         <span className="text-xs text-[var(--color-muted-foreground)]">
-          {sections.length} {sections.length === 1 ? 'section' : 'sections'} · {totalDocs}{' '}
+          {sectionEntries.length} {sectionEntries.length === 1 ? 'section' : 'sections'} · {totalDocs}{' '}
           {totalDocs === 1 ? 'doc' : 'docs'}
         </span>
       </div>
       <ul className="flex flex-col gap-1">
-        {sections.map(([key, section]) => (
+        {sectionEntries.map(([key]) => (
           <li key={key} className="text-xs text-[var(--color-muted-foreground)] truncate">
-            {section.label}
+            {humanize(key)}
           </li>
         ))}
       </ul>
@@ -109,7 +110,19 @@ function ProjectCard({
 
 export function HomePage() {
   const recent = useRecentDocs();
-  const categories = Object.entries(manifest as Record<string, ManifestCategory>);
+  const docs = useDocStore((s) => s.docs);
+
+  const grouped = useMemo(() => {
+    const out: Record<string, Record<string, Doc[]>> = {};
+    for (const d of docs) {
+      out[d.project] ??= {};
+      out[d.project][d.section] ??= [];
+      out[d.project][d.section].push(d);
+    }
+    return out;
+  }, [docs]);
+
+  const projects = Object.entries(grouped);
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-12 flex flex-col gap-12">
@@ -136,8 +149,8 @@ export function HomePage() {
           Library
         </h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {categories.map(([key, cat]) => (
-            <ProjectCard key={key} categoryKey={key} category={cat} />
+          {projects.map(([key, sections]) => (
+            <ProjectCard key={key} projectKey={key} sections={sections} />
           ))}
         </div>
       </section>
