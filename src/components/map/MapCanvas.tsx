@@ -15,14 +15,21 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useMapStore, type MapNode, type MapEdge } from '@/store/mapStore';
+import { useDocStore } from '@/store/docStore';
 import { generateScaffold } from '@/lib/mapScaffold';
-import manifest from '@/data/content-manifest.json';
 import { ConceptNode } from './ConceptNode';
 import { MapToolbar } from './MapToolbar';
 import { ExplosionOverlay } from './ExplosionOverlay';
 import { EdgePopover } from './EdgePopover';
 
 const nodeTypes = { concept: ConceptNode };
+
+function humanize(s: string): string {
+  return s
+    .split('-')
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(' ');
+}
 
 // Private inner component — must be rendered as a child of <ReactFlow> to access useReactFlow()
 function DropHandler({
@@ -117,11 +124,39 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const screenToFlowRef = useRef<((x: number, y: number) => { x: number; y: number }) | null>(null);
 
+  const docs = useDocStore((s) => s.docs);
+  const derivedManifest = useMemo(() => {
+    const out: Record<
+      string,
+      {
+        label: string;
+        link: string;
+        sections: Record<string, { label: string; link: string; docs: string[] }>;
+      }
+    > = {};
+    for (const d of docs) {
+      const project = d.project;
+      const section = d.section;
+      out[project] ??= {
+        label: humanize(project),
+        link: `${project}/index`,
+        sections: {},
+      };
+      out[project].sections[section] ??= {
+        label: humanize(section),
+        link: `${project}/${section}/index`,
+        docs: [],
+      };
+      out[project].sections[section].docs.push(d.slug);
+    }
+    return out;
+  }, [docs]);
+
   // Initialize map from scaffold on first open
   useEffect(() => {
     if (maps[topicId]) return;
     const scaffold = generateScaffold(
-      manifest as Parameters<typeof generateScaffold>[0],
+      derivedManifest as Parameters<typeof generateScaffold>[0],
       topicId,
     );
     if (scaffold.length > 0) {
@@ -129,7 +164,7 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
     } else {
       initMap(topicId);
     }
-  }, [topicId, maps, initMap, loadScaffold]);
+  }, [topicId, maps, initMap, loadScaffold, derivedManifest]);
 
   const topicMap = maps[topicId];
   const initialNodes = useMemo(() => (topicMap ? toFlowNodes(topicMap.nodes) : []), [topicMap]);
