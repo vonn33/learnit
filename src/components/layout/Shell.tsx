@@ -7,6 +7,7 @@ import {CommandPalette} from '@/components/ui/CommandPalette';
 import {useDocStore} from '@/store/docStore';
 import {useAnnotationStore} from '@/store/annotationStore';
 import {useMapStore} from '@/store/mapStore';
+import {useTagStore} from '@/store/tagStore';
 
 const SIDEBAR_ROUTES = ['/docs', '/manage'];
 
@@ -20,13 +21,16 @@ export function Shell() {
     const docFetch = useDocStore.getState().fetchAll();
     const annFetch = useAnnotationStore.getState().fetchAll();
     void Promise.all([docFetch, annFetch]);
+    void useTagStore.getState().fetchAll();
     const unsub1 = useDocStore.getState().subscribeRealtime();
     const unsub2 = useAnnotationStore.getState().subscribeRealtime();
     const unsub3 = useMapStore.getState().subscribeRealtime();
+    const unsub4 = useTagStore.getState().subscribeRealtime();
     return () => {
       unsub1();
       unsub2();
       unsub3();
+      unsub4();
     };
   }, []);
 
