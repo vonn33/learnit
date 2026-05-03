@@ -35,7 +35,7 @@ createRoot(document.getElementById('root')!).render(
           <Route element={<Shell />}>
             <Route index element={<HomePage />} />
             <Route path="docs/*" element={<DocsPage />} />
-            <Route path="highlights" element={<HighlightsPage />} />
+            <Route path="annotations" element={<HighlightsPage />} />
             <Route path="diagrams/*" element={<DiagramsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="manage" element={<ContentManagementPage />} />

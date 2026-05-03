@@ -22,7 +22,7 @@ export function Navbar({onSearchOpen}: {onSearchOpen: () => void}) {
 
   const navLinks = [
     {to: '/manage', icon: <Library size={15} />, label: 'Library'},
-    {to: '/highlights', icon: <Tag size={15} />, label: 'Highlights'},
+    {to: '/annotations', icon: <Tag size={15} />, label: 'Annotations'},
     {to: '/diagrams', icon: <GitBranch size={15} />, label: 'Diagrams'},
     {to: '/settings', icon: <Settings size={15} />, label: 'Settings'},
   ];
