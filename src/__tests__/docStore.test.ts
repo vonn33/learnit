@@ -39,4 +39,20 @@ describe('useDocStore', () => {
     useDocStore.getState().reset();
     expect(useDocStore.getState().docs).toEqual([]);
   });
+
+  it('fetchAll loads docs from Supabase', async () => {
+    const { supabase } = await import('@/lib/supabase');
+    const fakeDocs = [
+      { id: '1', title: 'A', slug: 'a', project: 'p', section: 's', content_md: '', abstract: '', toc_json: [], word_count: 0, user_id: null, created_at: '', updated_at: '' },
+    ];
+    (supabase.from as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+      select: () => ({
+        order: () => Promise.resolve({ data: fakeDocs, error: null }),
+      }),
+    } as never);
+
+    await useDocStore.getState().fetchAll();
+    expect(useDocStore.getState().docs).toEqual(fakeDocs);
+    expect(useDocStore.getState().loading).toBe(false);
+  });
 });

@@ -27,7 +27,21 @@ export const useDocStore = create<DocStore>((set, get) => ({
   error: null,
   activeContent: null,
 
-  fetchAll: async () => {},
+  fetchAll: async () => {
+    set({ loading: true, error: null });
+    const { data, error } = await supabase
+      .from('docs')
+      .select('id, title, slug, project, section, abstract, toc_json, word_count, user_id, created_at, updated_at')
+      .order('created_at', { ascending: false });
+    if (error) {
+      set({ loading: false, error: error.message });
+      return;
+    }
+    set({
+      docs: (data ?? []).map((d) => ({ ...d, content_md: '' })) as Doc[],
+      loading: false,
+    });
+  },
   fetchContent: async () => null,
   createDoc: async () => {
     throw new Error('not implemented');
