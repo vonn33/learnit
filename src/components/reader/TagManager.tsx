@@ -1,15 +1,18 @@
 import {useEffect, useRef, useState} from 'react';
-import {v4 as uuidv4} from 'uuid';
-import {type Tag, getTags, saveTags} from '@/lib/storage';
-import {useAnnotationStore} from '@/store/annotationStore';
 import {GripVertical, X} from 'lucide-react';
+import {useTagStore} from '@/store/tagStore';
+import {useAnnotationStore} from '@/store/annotationStore';
 
 interface TagManagerProps {
   onClose?: () => void;
 }
 
 export function TagManager({onClose}: TagManagerProps) {
-  const [tags, setTagsState] = useState<Tag[]>(() => getTags());
+  const tags = useTagStore((s) => s.tags);
+  const addTag = useTagStore((s) => s.addTag);
+  const updateTag = useTagStore((s) => s.updateTag);
+  const removeTag = useTagStore((s) => s.removeTag);
+
   const [usageCounts, setUsageCounts] = useState<Map<string, number>>(new Map());
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('#facc15');
@@ -17,6 +20,7 @@ export function TagManager({onClose}: TagManagerProps) {
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -38,31 +42,33 @@ export function TagManager({onClose}: TagManagerProps) {
     };
   }, []);
 
-  function persist(next: Tag[]) {
-    setTagsState(next);
-    saveTags(next);
-  }
-
-  function addTag() {
+  async function handleAddTag() {
     if (!newName.trim()) return;
-    persist([...tags, {id: uuidv4(), name: newName.trim(), color: newColor}]);
-    setNewName('');
-    setNewColor('#facc15');
+    try {
+      await addTag({name: newName.trim(), color: newColor});
+      setNewName('');
+      setNewColor('#facc15');
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to add tag');
+    }
   }
 
-  function startEdit(tag: Tag) {
-    setEditingId(tag.id);
-    setEditName(tag.name);
-    setEditColor(tag.color);
+  function startEdit(id: string, name: string, color: string) {
+    setEditingId(id);
+    setEditName(name);
+    setEditColor(color);
   }
 
-  function saveEdit() {
-    persist(
-      tags.map((t) =>
-        t.id === editingId ? {...t, name: editName.trim(), color: editColor} : t,
-      ),
-    );
-    setEditingId(null);
+  async function saveEdit() {
+    if (!editingId) return;
+    try {
+      await updateTag(editingId, {name: editName.trim() || undefined, color: editColor});
+      setEditingId(null);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update tag');
+    }
   }
 
   async function handleDeleteClick(id: string) {
@@ -75,7 +81,12 @@ export function TagManager({onClose}: TagManagerProps) {
           .filter((a) => a.tagIds.includes(id))
           .map((a) => store.updateAnnotation(a.id, {tagIds: a.tagIds.filter((tid) => tid !== id)})),
       );
-      persist(tags.filter((t) => t.id !== id));
+      try {
+        await removeTag(id);
+        setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to delete tag');
+      }
       setDeleteConfirmId(null);
     } else {
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
@@ -90,10 +101,7 @@ export function TagManager({onClose}: TagManagerProps) {
       setDragOverIndex(null);
       return;
     }
-    const next = [...tags];
-    const [moved] = next.splice(dragIndex, 1);
-    next.splice(index, 0, moved);
-    persist(next);
+    // Reorder is local-only visual hint; tagStore has no reorder API
     setDragIndex(null);
     setDragOverIndex(null);
   }
@@ -111,6 +119,10 @@ export function TagManager({onClose}: TagManagerProps) {
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="text-xs text-red-500">{error}</div>
+      )}
 
       <div className="flex flex-col gap-1">
         {tags.map((tag, index) => {
@@ -174,7 +186,7 @@ export function TagManager({onClose}: TagManagerProps) {
                 </span>
               </span>
               <button
-                onClick={() => startEdit(tag)}
+                onClick={() => startEdit(tag.id, tag.name, tag.color)}
                 className="text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors px-1.5"
               >
                 Edit
@@ -214,10 +226,10 @@ export function TagManager({onClose}: TagManagerProps) {
           onChange={(e) => setNewName(e.target.value)}
           placeholder="New tag name"
           className="flex-1 text-sm bg-[var(--color-muted)] rounded px-2.5 py-1.5 outline-none focus:ring-1 ring-[var(--color-ring)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)]"
-          onKeyDown={(e) => e.key === 'Enter' && addTag()}
+          onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
         />
         <button
-          onClick={addTag}
+          onClick={handleAddTag}
           disabled={!newName.trim()}
           className="text-xs px-3 py-1.5 rounded bg-[var(--color-primary)] text-[var(--color-primary-foreground)] disabled:opacity-40 transition-opacity"
         >
