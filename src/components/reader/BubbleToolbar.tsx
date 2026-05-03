@@ -105,21 +105,20 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
   const doHighlight = useCallback(
     async (note = '') => {
       if (!savedRange || !selectedText) return;
-      const newContext = buildAnchorContext(savedRange);
-      const existing = useAnnotationStore.getState().annotations.find(
-        (a) => a.docId === pageUrl && a.anchorContext === newContext,
-      );
-      if (existing) {
-        // Already annotated — surface the existing annotation instead of duplicating
+      // DOM-based dedup: if selection is inside/overlapping an existing mark, open it
+      const ancestor = savedRange.commonAncestorContainer;
+      const ancestorEl = ancestor.nodeType === Node.TEXT_NODE
+        ? ancestor.parentElement
+        : ancestor as Element;
+      const existingMark = ancestorEl?.closest('mark[data-annotation-id]') as HTMLElement | null;
+      if (existingMark) {
         window.getSelection()?.removeAllRanges();
         setVisible(false);
-        // Trigger a click on the existing mark so NotePanel opens
-        const mark = document.querySelector(
-          `mark[data-annotation-id="${existing.id}"]`,
-        ) as HTMLElement | null;
-        if (mark) mark.click();
+        existingMark.click();
         return;
       }
+
+      const newContext = buildAnchorContext(savedRange);
       await addAnnotation({
         type: 'highlight',
         docId: pageUrl,
