@@ -43,10 +43,12 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
       }
       appliedRef.current = true;
 
-      // Scroll to and pulse a specific annotation if the URL hash targets one
+      // Scroll to and pulse a specific annotation if the URL hash targets one.
+      // Consume the hash immediately so re-renders from new annotations don't re-trigger.
       const hash = window.location.hash;
       if (hash.startsWith('#annotation-')) {
         const annotationId = hash.slice('#annotation-'.length);
+        history.replaceState(null, '', window.location.pathname + window.location.search);
         requestAnimationFrame(() => {
           const mark = container.querySelector(
             `mark[data-annotation-id="${annotationId}"]`,
