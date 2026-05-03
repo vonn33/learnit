@@ -5,18 +5,21 @@ import { v4 as uuid } from 'uuid';
 export interface Annotation {
   id: string;
   docId: string;
-  position: { start: number; end: number };
   type: 'highlight' | 'note' | 'quick-capture';
   text: string;
-  note?: string;
+  anchorContext: string;
+  tagIds: string[];
+  note: string;
+  connectionUrl: string;
   mapNodeId?: string;
-  tagIds?: string[];
-  anchorContext?: string;
   createdAt: string;
 }
 
 type NewAnnotation = Omit<Annotation, 'id' | 'createdAt'>;
-type AnnotationUpdate = Partial<Pick<Annotation, 'note' | 'mapNodeId' | 'tagIds' | 'type'>>;
+type AnnotationUpdate = Partial<Pick<
+  Annotation,
+  'note' | 'mapNodeId' | 'tagIds' | 'type' | 'connectionUrl'
+>>;
 
 interface AnnotationStore {
   annotations: Annotation[];

@@ -1,14 +1,13 @@
 import {useEffect, useRef, useState} from 'react';
-import {type Tag, getHighlights} from '@/lib/storage';
-import {updateHighlight, deleteHighlight, hexToRgba} from '@/lib/highlights';
+import {type Tag} from '@/lib/storage';
+import {hexToRgba} from '@/lib/highlights';
 import {X, Check} from 'lucide-react';
 import {useAnnotationStore} from '@/store/annotationStore';
 import {useMapStore} from '@/store/mapStore';
 import {NodePicker} from '@/components/map/NodePicker';
 
 interface NotePanelProps {
-  highlightId: string;
-  annotationId?: string;
+  annotationId: string;
   topicId?: string;
   anchorRect: DOMRect | null;
   tags: Tag[];
@@ -16,30 +15,26 @@ interface NotePanelProps {
   onDelete: (id: string) => void;
 }
 
-export function NotePanel({highlightId, annotationId, topicId, anchorRect: _anchorRect, tags, onClose, onDelete}: NotePanelProps) {
-  const [highlight, setHighlight] = useState(() =>
-    getHighlights().find((h) => h.id === highlightId) ?? null,
-  );
-  const [note, setNote] = useState(highlight?.note ?? '');
-  const [connectionUrl, setConnectionUrl] = useState(highlight?.connectionUrl ?? '');
+export function NotePanel({annotationId, topicId, anchorRect: _anchorRect, tags, onClose, onDelete}: NotePanelProps) {
+  const annotation = useAnnotationStore((s) => s.annotations.find((a) => a.id === annotationId) ?? null);
+  const updateAnnotation = useAnnotationStore((s) => s.updateAnnotation);
+  const removeAnnotation = useAnnotationStore((s) => s.removeAnnotation);
+
+  const [note, setNote] = useState(annotation?.note ?? '');
+  const [connectionUrl, setConnectionUrl] = useState(annotation?.connectionUrl ?? '');
   const [savedAt, setSavedAt] = useState(0);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showNodePicker, setShowNodePicker] = useState(false);
-  const [mapNodeId, setMapNodeId] = useState<string | null>(() =>
-    annotationId
-      ? (useAnnotationStore.getState().annotations.find((a) => a.id === annotationId)?.mapNodeId ?? null)
-      : null,
-  );
+  const [mapNodeId, setMapNodeId] = useState<string | null>(annotation?.mapNodeId ?? null);
 
   useEffect(() => {
-    const hl = getHighlights().find((h) => h.id === highlightId) ?? null;
-    setHighlight(hl);
-    setNote(hl?.note ?? '');
-    setConnectionUrl(hl?.connectionUrl ?? '');
+    setNote(annotation?.note ?? '');
+    setConnectionUrl(annotation?.connectionUrl ?? '');
     setDeleteConfirm(false);
-  }, [highlightId]);
+    setMapNodeId(annotation?.mapNodeId ?? null);
+  }, [annotationId, annotation?.note, annotation?.connectionUrl, annotation?.mapNodeId]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -63,13 +58,13 @@ export function NotePanel({highlightId, annotationId, topicId, anchorRect: _anch
   }, []);
 
   function save() {
-    updateHighlight(highlightId, {note, connectionUrl});
+    updateAnnotation(annotationId, {note, connectionUrl});
     setSavedAt(Date.now());
     setTimeout(() => setSavedAt(0), 1500);
   }
 
   function handleConnect(nodeId: string) {
-    if (!annotationId || !topicId) return;
+    if (!topicId) return;
     useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
     useMapStore.getState().updateNode(topicId, nodeId, {annotationId});
     setMapNodeId(nodeId);
@@ -77,7 +72,7 @@ export function NotePanel({highlightId, annotationId, topicId, anchorRect: _anch
   }
 
   function handleDisconnect() {
-    if (!annotationId || !topicId || !mapNodeId) return;
+    if (!topicId || !mapNodeId) return;
     useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: undefined});
     useMapStore.getState().updateNode(topicId, mapNodeId, {annotationId: undefined});
     setMapNodeId(null);
@@ -86,8 +81,8 @@ export function NotePanel({highlightId, annotationId, topicId, anchorRect: _anch
   function handleDeleteClick() {
     if (deleteConfirm) {
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
-      deleteHighlight(highlightId);
-      onDelete(highlightId);
+      removeAnnotation(annotationId);
+      onDelete(annotationId);
     } else {
       setDeleteConfirm(true);
       deleteTimerRef.current = setTimeout(() => setDeleteConfirm(false), 3000);
@@ -98,9 +93,9 @@ export function NotePanel({highlightId, annotationId, topicId, anchorRect: _anch
     (s) => (mapNodeId && topicId ? (s.maps[topicId]?.nodes.find((n) => n.id === mapNodeId)?.label ?? null) : null),
   );
 
-  if (!highlight) return null;
+  if (!annotation) return null;
 
-  const appliedTags = tags.filter((t) => highlight.tagIds.includes(t.id));
+  const appliedTags = tags.filter((t) => annotation.tagIds.includes(t.id));
 
   return (
     <div
@@ -139,9 +134,9 @@ export function NotePanel({highlightId, annotationId, topicId, anchorRect: _anch
 
       {/* Quote */}
       <blockquote className="mx-4 my-3 pl-3 border-l-2 border-[var(--color-border)] text-xs text-[var(--color-muted-foreground)] italic leading-relaxed">
-        {highlight.selectedText.length > 200
-          ? highlight.selectedText.slice(0, 200) + '…'
-          : highlight.selectedText}
+        {annotation.text.length > 200
+          ? annotation.text.slice(0, 200) + '…'
+          : annotation.text}
       </blockquote>
 
       {/* Note */}
@@ -170,7 +165,7 @@ export function NotePanel({highlightId, annotationId, topicId, anchorRect: _anch
       </div>
 
       {/* Map Node Connection */}
-      {annotationId && topicId && (
+      {topicId && (
         <div className="px-4 pb-3">
           <label className="block text-[10px] uppercase tracking-wider text-[var(--color-muted-foreground)] font-semibold mb-1.5">
             Map Node
@@ -223,7 +218,7 @@ export function NotePanel({highlightId, annotationId, topicId, anchorRect: _anch
       {/* Footer */}
       <div className="flex items-center justify-between px-4 py-3 border-t bg-[var(--color-background)]">
         <span className="text-[10px] text-[var(--color-muted-foreground)]">
-          {new Date(highlight.createdAt).toLocaleDateString()}
+          {new Date(annotation.createdAt).toLocaleDateString()}
         </span>
         <button
           onClick={handleDeleteClick}
