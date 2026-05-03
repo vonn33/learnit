@@ -55,8 +55,15 @@ export const useDocStore = create<DocStore>((set, get) => ({
     set({ activeContent: { slug, content_md: data.content_md } });
     return data as Doc;
   },
-  createDoc: async () => {
-    throw new Error('not implemented');
+  createDoc: async (input) => {
+    const { data, error } = await supabase
+      .from('docs')
+      .insert(input)
+      .select()
+      .single();
+    if (error || !data) throw new Error(error?.message ?? 'createDoc failed');
+    set((s) => ({ docs: [data as Doc, ...s.docs] }));
+    return data as Doc;
   },
   updateDoc: async () => {},
   deleteDoc: async () => {},

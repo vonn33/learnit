@@ -71,4 +71,22 @@ describe('useDocStore', () => {
     expect(result?.content_md).toBe('# Hi');
     expect(useDocStore.getState().activeContent).toEqual({ slug: 'a', content_md: '# Hi' });
   });
+
+  it('createDoc inserts and returns new doc', async () => {
+    const { supabase } = await import('@/lib/supabase');
+    const created = { id: 'new', title: 'T', slug: 't', project: 'p', section: 's', content_md: '#T', abstract: '', toc_json: [], word_count: 1, user_id: null, created_at: '', updated_at: '' };
+    (supabase.from as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+      insert: () => ({
+        select: () => ({
+          single: () => Promise.resolve({ data: created, error: null }),
+        }),
+      }),
+    } as never);
+
+    const result = await useDocStore.getState().createDoc({
+      title: 'T', slug: 't', project: 'p', section: 's',
+      content_md: '#T', abstract: '', toc_json: [], word_count: 1,
+    });
+    expect(result.id).toBe('new');
+  });
 });
