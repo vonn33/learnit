@@ -89,7 +89,45 @@ export const useDocStore = create<DocStore>((set, get) => ({
     }
     set((s) => ({ docs: s.docs.filter((d) => d.id !== id) }));
   },
-  subscribeRealtime: () => () => {},
+  subscribeRealtime: () => {
+    const channel = supabase
+      .channel('docs-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'docs' },
+        (payload) => {
+          const newDoc = { ...payload.new, content_md: '' } as Doc;
+          set((s) => {
+            if (s.docs.find((d) => d.id === newDoc.id)) return s;
+            return { docs: [newDoc, ...s.docs] };
+          });
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'docs' },
+        (payload) => {
+          const updated = payload.new as Partial<Doc> & { id: string };
+          set((s) => ({
+            docs: s.docs.map((d) =>
+              d.id === updated.id ? { ...d, ...updated } : d,
+            ),
+          }));
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'docs' },
+        (payload) => {
+          const id = (payload.old as { id: string }).id;
+          set((s) => ({ docs: s.docs.filter((d) => d.id !== id) }));
+        },
+      )
+      .subscribe();
+    return () => {
+      channel.unsubscribe();
+    };
+  },
   reset: () => {
     set({ docs: [], loading: false, error: null, activeContent: null });
   },
