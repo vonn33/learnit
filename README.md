@@ -1,10 +1,10 @@
 # LearnIt
 
-A local-first reading and annotation tool for personal knowledge documents.
+A reading and annotation tool for personal knowledge documents, backed by Supabase for cross-device sync.
 
 ## Stack
 
-Vite 8 · React 19 · React Router v7 · Tailwind v4 · @mdx-js/rollup · @xyflow/react · Zustand · Lucide React
+Vite 8 · React 19 · React Router v7 · Tailwind v4 · @mdx-js/rollup · @xyflow/react · Zustand · Supabase · Lucide React
 
 ## Development
 
@@ -12,43 +12,25 @@ Vite 8 · React 19 · React Router v7 · Tailwind v4 · @mdx-js/rollup · @xyflo
 npm run dev      # start dev server at localhost:5173
 npm run build    # production build
 npm run preview  # preview production build
+npm run test     # vitest single run
 ```
+
+`.env.local` must define `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
 ---
 
 ## Adding content
 
-### Prerequisites
+Documents live in Supabase (Postgres). Upload via the in-app Import wizard
+(`src/components/import/ImportWizard.tsx`) — paste or drop a `.md` file, set
+project / section / title, and submit. The sidebar reads from `docStore`
+which fetches from Supabase at boot and subscribes to realtime changes, so
+new documents appear without a refresh.
 
-```bash
-brew install pandoc   # required for .docx / .pdf conversion
-```
+To rename, retag, or delete a document, use the Content Management page
+(`/manage`).
 
-### Ingest a document
-
-```bash
-npm run ingest path/to/document.docx
-```
-
-The CLI will prompt for:
-
-| Prompt | What to enter |
-|---|---|
-| **Title** | Human-readable title (defaults to filename) |
-| **Project** | Pick an existing project or create a new one |
-| **Section** | Pick an existing section or create a new one |
-| **Position** | Order within the section (defaults to next available) |
-| **Description** | Optional subtitle shown in metadata |
-
-After confirmation it:
-1. Converts the document to Markdown via pandoc
-2. Writes an MDX file to `../learnit/docs/<project>/<section>/<slug>.mdx`
-3. Registers the page in `src/data/content-manifest.json`
-4. Prints the remaining manual steps
-
-The page appears in the sidebar immediately on next dev server refresh.
-
-### Manual steps after ingest
+### Manual steps after upload
 
 **Tables** — pandoc produces raw Markdown tables. Structured comparison tables work better as `<DataTable>`:
 
@@ -105,36 +87,11 @@ Then reference it in the MDX:
 
 ## Content structure
 
-```
-../learnit/docs/
-├── <project>/
-│   ├── index.mdx               ← project landing page
-│   └── <section>/
-│       ├── index.mdx           ← section landing page
-│       └── <slug>.mdx          ← individual document
-
-src/data/content-manifest.json  ← sidebar registry (auto-updated by ingest)
-```
-
-The manifest shape:
-
-```json
-{
-  "<project-key>": {
-    "label": "Project Label",
-    "link": "project-key/index",
-    "sections": {
-      "<section-key>": {
-        "label": "Section Label",
-        "link": "project-key/section-key/index",
-        "docs": ["slug-1", "slug-2"]
-      }
-    }
-  }
-}
-```
-
-To reorder pages within a section: edit the `docs` array in `content-manifest.json` directly.
+Documents live in the Supabase `docs` table. Each row carries `project`,
+`section`, `slug`, `title`, `content_md`, and a derived `toc_json`. The
+sidebar groups documents by `project` -> `section` and sorts entries by
+`created_at`. There is no static manifest — the registry is the live result
+of `docStore.fetchAll()`.
 
 ---
 
@@ -150,16 +107,10 @@ To reorder pages within a section: edit the `docs` array in `content-manifest.js
 
 ## Data
 
-Everything is stored in `localStorage` under the `handbook:*` namespace. Nothing is sent to a server.
-
-| Key | Contents |
-|---|---|
-| `handbook:highlights` | All highlight annotations |
-| `handbook:tags` | Tag definitions and order |
-| `handbook:user-diagrams` | User-created diagrams |
-| `handbook:diagram-layouts` | Saved node positions for concept maps |
-| `handbook:reading-progress` | Scroll position per page |
-| `handbook:ui` | Theme preference |
+Documents, annotations, tags, and concept maps are stored in Supabase
+(Postgres) and sync across devices via realtime subscriptions. UI-layout
+state (theme, split-pane mode) is the only thing that still persists in
+`localStorage` under the `handbook:*` namespace.
 
 **Export / Import** — Settings page or the Highlights page toolbar. Export produces a JSON snapshot. Import supports merge (add non-duplicate items) or replace (overwrite everything).
 

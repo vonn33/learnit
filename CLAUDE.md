@@ -9,23 +9,23 @@ npm run dev          # Vite dev server at localhost:5173
 npm run build        # TypeScript check + production build
 npm run test         # Run Vitest unit tests (single run)
 npm run test:watch   # Vitest in watch mode
-npm run ingest       # Interactive CLI to ingest .docx/.pdf documents
 ```
 
 ## Architecture
 
-**LearnIt** is a local-first reading and annotation tool. All state persists in `localStorage` under `handbook:*` keys — there is no server or API.
+**LearnIt** is a reading and annotation tool. Documents, annotations, and concept maps persist in Supabase (Postgres) and sync across devices via realtime subscriptions. Only UI-layout state (`workspaceStore`) lives in `localStorage`.
 
 ### State & Data Flow
 
-Three Zustand stores (with `persist` middleware) are the single source of truth:
-- `annotationStore` — highlights, notes, tags
-- `mapStore` — concept map nodes/edges per document
+Four Zustand stores are the single source of truth. `annotationStore`, `mapStore`, and `docStore` back to Supabase (Postgres) and subscribe to realtime changes; `workspaceStore` is local-only UI state:
+- `annotationStore` — highlights, notes, tags (Supabase)
+- `mapStore` — concept map nodes/edges per document (Supabase)
+- `docStore` — uploaded documents and their content (Supabase)
 - `workspaceStore` — UI layout (split/focus-left/focus-right modes)
 
 ### Document Loading
 
-Documents live in `docs/<project>/<section>/<slug>.mdx` and are lazy-loaded via `import.meta.glob()` in `src/data/` or the DocsPage. The ingest CLI adds new documents and updates `src/data/content-manifest.json` (the sidebar registry).
+Documents live in Supabase. Users upload `.md` files via the Import wizard (`src/components/import/ImportWizard.tsx`). The sidebar registry is the live result of `docStore.fetchAll()`.
 
 ### Two-Pane Layout
 
@@ -50,8 +50,13 @@ The staging inbox (`status: "staged"`) allows dragged highlights to become nodes
 | Path | Purpose |
 |---|---|
 | `src/store/` | All application state |
+| `src/store/docStore.ts` | Document CRUD + realtime subscription against Supabase |
+| `src/lib/supabase.ts` | Supabase client + row types (`DocRow`, `AnnotationRow`, etc.) |
 | `src/components/map/` | Concept map canvas, nodes, edge popover |
 | `src/components/reader/` | Highlight toolbar, annotation layer, note panel |
+| `src/components/reader/TOCPanel.tsx` | Per-document table of contents from `toc_json` |
+| `src/components/mdx/RuntimeMdx.tsx` | Renders Markdown content fetched from Supabase at runtime |
+| `src/components/import/` | Import wizard for uploading `.md` files into Supabase |
+| `src/pages/ContentManagementPage.tsx` | Manage / rename / delete uploaded documents |
 | `src/lib/highlights.ts` | Anchor context & highlight application logic |
 | `src/lib/autoLayout.ts` | Graph auto-layout algorithm |
-| `src/data/content-manifest.json` | Sidebar registry (auto-generated, do not edit manually) |
