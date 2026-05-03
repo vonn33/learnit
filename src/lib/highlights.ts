@@ -59,6 +59,36 @@ export function applyHighlightsToDOM(
   }
 }
 
+function resolveAnchorOffset(container: HTMLElement, selected: string, prefix: string): number {
+  const fullText = container.textContent ?? '';
+  // Try to find prefix+selected together — disambiguates repeated text
+  if (prefix) {
+    const needle = prefix + selected;
+    const pos = fullText.indexOf(needle);
+    if (pos !== -1) return pos + prefix.length;
+  }
+  // Fallback: first occurrence
+  return fullText.indexOf(selected);
+}
+
+function textNodeAtOffset(
+  container: HTMLElement,
+  charOffset: number,
+): {node: Text; offset: number} | null {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let accumulated = 0;
+  let node = walker.nextNode() as Text | null;
+  while (node) {
+    const len = node.textContent?.length ?? 0;
+    if (accumulated + len > charOffset) {
+      return {node, offset: charOffset - accumulated};
+    }
+    accumulated += len;
+    node = walker.nextNode() as Text | null;
+  }
+  return null;
+}
+
 function applyOneHighlight(
   hl: Annotation,
   container: HTMLElement,
@@ -68,45 +98,42 @@ function applyOneHighlight(
   if (!selectedText) return;
 
   const parts = anchorContext.split('|||');
+  const prefix = parts[0] ?? '';
   const contextSelected = parts[1] ?? selectedText;
 
-  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
-  let node = walker.nextNode() as Text | null;
+  const startCharOffset = resolveAnchorOffset(container, contextSelected, prefix);
+  if (startCharOffset === -1) return;
 
-  while (node) {
-    const idx = node.textContent?.indexOf(contextSelected) ?? -1;
-    if (idx !== -1) {
-      const range = document.createRange();
-      range.setStart(node, idx);
-      range.setEnd(node, idx + contextSelected.length);
+  const startPos = textNodeAtOffset(container, startCharOffset);
+  const endPos = textNodeAtOffset(container, startCharOffset + contextSelected.length);
+  if (!startPos || !endPos) return;
 
-      const {bg, border} = getHighlightColorForTags(hl.tagIds, tags);
-      const mark = document.createElement('mark');
-      mark.className = 'handbook-highlight';
-      mark.dataset.highlightId = hl.id;
-      mark.dataset.annotationId = hl.id;
-      mark.style.borderBottom = `2px solid ${border}`;
-      mark.style.background = bg;
+  const range = document.createRange();
+  range.setStart(startPos.node, startPos.offset);
+  range.setEnd(endPos.node, endPos.offset);
 
-      try {
-        range.surroundContents(mark);
-      } catch {
-        const fragment = range.extractContents();
-        mark.appendChild(fragment);
-        range.insertNode(mark);
-      }
+  const {bg, border} = getHighlightColorForTags(hl.tagIds, tags);
+  const mark = document.createElement('mark');
+  mark.className = 'handbook-highlight';
+  mark.dataset.highlightId = hl.id;
+  mark.dataset.annotationId = hl.id;
+  mark.style.borderBottom = `2px solid ${border}`;
+  mark.style.background = bg;
 
-      if (hl.note) {
-        const dot = document.createElement('span');
-        dot.className = 'handbook-note-dot';
-        dot.dataset.highlightId = hl.id;
-        dot.style.background = border;
-        mark.insertAdjacentElement('afterend', dot);
-      }
+  try {
+    range.surroundContents(mark);
+  } catch {
+    const fragment = range.extractContents();
+    mark.appendChild(fragment);
+    range.insertNode(mark);
+  }
 
-      return;
-    }
-    node = walker.nextNode() as Text | null;
+  if (hl.note) {
+    const dot = document.createElement('span');
+    dot.className = 'handbook-note-dot';
+    dot.dataset.highlightId = hl.id;
+    dot.style.background = border;
+    mark.insertAdjacentElement('afterend', dot);
   }
 }
 
