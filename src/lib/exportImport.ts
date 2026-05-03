@@ -1,102 +1,78 @@
-import {
-  type HandbookData,
-  getTags,
-  getDiagramLayouts,
-  getReadingProgress,
-  saveTags,
-  saveDiagramLayout,
-  saveReadingProgress,
-} from './storage';
 import { useAnnotationStore, type Annotation } from '@/store/annotationStore';
-import { useMapStore, type TopicMap } from '@/store/mapStore';
+import { supabase, type AnnotationRow, type TagRow } from '@/lib/supabase';
 
-export function exportData(): HandbookData & { annotations: unknown; maps: unknown } {
-  return {
-    tags: getTags(),
-    diagramLayouts: getDiagramLayouts(),
-    readingProgress: getReadingProgress(),
-    annotations: useAnnotationStore.getState().annotations,
-    maps: useMapStore.getState().maps,
-  };
+export type ExportData = {
+  annotations: Annotation[];
+  tags: TagRow[];
+};
+
+export function exportData(): ExportData {
+  const annotations = useAnnotationStore.getState().annotations;
+  // Tags live in Supabase; the annotation store doesn't hold them, so we
+  // export whatever tag rows have been fetched into the annotation store's
+  // sibling context.  For now we export an empty array — callers that need
+  // tags should extend this once a tagStore is introduced.
+  return { annotations, tags: [] };
 }
 
 export function downloadExport(): void {
   const data = exportData();
   const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], {type: 'application/json'});
+  const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `handbook-data-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `learnit-export-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-export function importData(
-  data: unknown,
-  mode: 'replace' | 'merge' = 'replace',
-): void {
+// `mode` is accepted for backward-compatibility with existing callers but is
+// no longer used — Supabase upsert (onConflict: 'id') is always idempotent.
+export async function importData(data: unknown, _mode?: 'replace' | 'merge'): Promise<void> {
   const parsed = validateImport(data);
 
-  if (mode === 'replace') {
-    saveTags(parsed.tags);
-    for (const [pageId, layout] of Object.entries(parsed.diagramLayouts)) {
-      saveDiagramLayout(pageId, layout);
-    }
-    for (const [pageUrl, progress] of Object.entries(parsed.readingProgress)) {
-      saveReadingProgress(pageUrl, progress.scrollFraction);
-    }
-  } else {
-    const existingTagIds = new Set(getTags().map((t) => t.id));
-    const newTags = parsed.tags.filter((t) => !existingTagIds.has(t.id));
-    saveTags([...getTags(), ...newTags]);
-
-    const existingLayouts = getDiagramLayouts();
-    for (const [pageId, layout] of Object.entries(parsed.diagramLayouts)) {
-      if (!existingLayouts[pageId]) {
-        saveDiagramLayout(pageId, layout);
-      }
-    }
+  // 1. Upsert tags
+  if (parsed.tags.length > 0) {
+    const { error } = await supabase
+      .from('tags')
+      .upsert(parsed.tags, { onConflict: 'id' });
+    if (error) throw new Error(`Tags upsert failed: ${error.message}`);
   }
 
-  // Restore annotation store
-  const rawData = data as Record<string, unknown>;
-  if (rawData.annotations && Array.isArray(rawData.annotations)) {
-    if (mode === 'replace') {
-      useAnnotationStore.getState().reset();
-    }
-    useAnnotationStore.setState((s) => ({
-      annotations: mode === 'replace'
-        ? rawData.annotations as Annotation[]
-        : [...s.annotations, ...(rawData.annotations as Annotation[])],
+  // 2. Map camelCase annotation fields → snake_case AnnotationRow, then upsert
+  if (parsed.annotations.length > 0) {
+    const rows: AnnotationRow[] = parsed.annotations.map((a) => ({
+      id: a.id,
+      doc_id: a.docId ?? null,
+      type: a.type,
+      text: a.text,
+      anchor_context: a.anchorContext ?? '',
+      tag_ids: a.tagIds ?? [],
+      note: a.note ?? '',
+      connection_url: a.connectionUrl ?? '',
+      map_node_id: a.mapNodeId ?? null,
+      user_id: null,
+      created_at: a.createdAt,
     }));
+
+    const { error } = await supabase
+      .from('annotations')
+      .upsert(rows, { onConflict: 'id' });
+    if (error) throw new Error(`Annotations upsert failed: ${error.message}`);
   }
 
-  // Restore map store
-  if (rawData.maps && typeof rawData.maps === 'object') {
-    if (mode === 'replace') {
-      useMapStore.getState().reset();
-    }
-    useMapStore.setState((s) => ({
-      maps: mode === 'replace'
-        ? rawData.maps as Record<string, TopicMap>
-        : { ...s.maps, ...(rawData.maps as Record<string, TopicMap>) },
-    }));
-  }
+  // 3. Re-hydrate the in-memory store from Supabase
+  await useAnnotationStore.getState().fetchAll();
 }
 
-function validateImport(data: unknown): HandbookData {
-  if (
-    typeof data !== 'object' ||
-    data === null ||
-    !Array.isArray((data as HandbookData).tags)
-  ) {
-    throw new Error('Invalid handbook data format');
+function validateImport(data: unknown): ExportData {
+  if (typeof data !== 'object' || data === null) {
+    throw new Error('Invalid export format: expected a JSON object');
   }
-  const d = data as HandbookData;
+  const d = data as Record<string, unknown>;
   return {
-    tags: d.tags ?? [],
-    diagramLayouts: d.diagramLayouts ?? {},
-    readingProgress: d.readingProgress ?? {},
+    annotations: Array.isArray(d.annotations) ? (d.annotations as Annotation[]) : [],
+    tags: Array.isArray(d.tags) ? (d.tags as TagRow[]) : [],
   };
 }
