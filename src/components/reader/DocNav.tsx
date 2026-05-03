@@ -1,37 +1,33 @@
+import {useMemo} from 'react';
 import {Link} from 'react-router';
-import manifest from '@/data/content-manifest.json';
-
-type ManifestShape = Record<string, {sections: Record<string, {docs: string[]}>}>;
+import {useDocStore, type Doc} from '@/store/docStore';
 
 interface DocEntry {
   path: string;
   label: string;
 }
 
-function flattenManifest(): DocEntry[] {
-  const entries: DocEntry[] = [];
-  const m = manifest as ManifestShape;
-  for (const [catKey, cat] of Object.entries(m)) {
-    for (const [secKey, sec] of Object.entries(cat.sections)) {
-      for (const slug of sec.docs) {
-        entries.push({
-          path: `/docs/${catKey}/${secKey}/${slug}`,
-          label: slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-        });
-      }
-    }
-  }
-  return entries;
+function flattenDocs(docs: Doc[]): DocEntry[] {
+  const sorted = [...docs].sort((a, b) => {
+    if (a.project !== b.project) return a.project.localeCompare(b.project);
+    if (a.section !== b.section) return a.section.localeCompare(b.section);
+    return a.created_at.localeCompare(b.created_at);
+  });
+  return sorted.map((d) => ({
+    path: `/docs/${d.project}/${d.section}/${d.slug}`,
+    label: d.title,
+  }));
 }
 
-const ALL_DOCS = flattenManifest();
-
 export function DocNav({currentPath}: {currentPath: string}) {
-  const idx = ALL_DOCS.findIndex((e) => e.path === currentPath);
+  const docs = useDocStore((s) => s.docs);
+  const allDocs = useMemo(() => flattenDocs(docs), [docs]);
+
+  const idx = allDocs.findIndex((e) => e.path === currentPath);
   if (idx === -1) return null;
 
-  const prev = idx > 0 ? ALL_DOCS[idx - 1] : null;
-  const next = idx < ALL_DOCS.length - 1 ? ALL_DOCS[idx + 1] : null;
+  const prev = idx > 0 ? allDocs[idx - 1] : null;
+  const next = idx < allDocs.length - 1 ? allDocs[idx + 1] : null;
 
   if (!prev && !next) return null;
 
