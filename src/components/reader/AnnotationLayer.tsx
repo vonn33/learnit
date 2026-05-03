@@ -42,6 +42,23 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
         applyHighlightsToDOM(pageAnnotations, container, tags);
       }
       appliedRef.current = true;
+
+      // Scroll to and pulse a specific annotation if the URL hash targets one
+      const hash = window.location.hash;
+      if (hash.startsWith('#annotation-')) {
+        const annotationId = hash.slice('#annotation-'.length);
+        requestAnimationFrame(() => {
+          const mark = container.querySelector(
+            `mark[data-annotation-id="${annotationId}"]`,
+          );
+          if (mark) {
+            mark.scrollIntoView({behavior: 'smooth', block: 'center'});
+            mark.classList.add('handbook-highlight-pulse');
+            setTimeout(() => mark.classList.remove('handbook-highlight-pulse'), 1500);
+          }
+        });
+      }
+
       return true;
     };
 

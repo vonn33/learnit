@@ -61,7 +61,7 @@ export function HighlightsPage() {
     <div className="max-w-4xl mx-auto px-6 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
-          Highlights
+          Annotations
           <span className="ml-2 text-sm font-normal text-[var(--color-muted-foreground)]">
             {annotations.length}
           </span>
@@ -107,7 +107,7 @@ export function HighlightsPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search highlights and notes…"
+            placeholder="Search annotations…"
             className="w-full pl-9 pr-3 py-2 text-sm bg-[var(--color-card)] border rounded-lg outline-none focus:ring-1 ring-[var(--color-ring)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)]"
           />
         </div>
@@ -143,8 +143,8 @@ export function HighlightsPage() {
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-[var(--color-muted-foreground)] text-sm">
           {annotations.length === 0
-            ? 'No highlights yet. Select text on a doc page to create one.'
-            : 'No highlights match your filter.'}
+            ? 'No annotations yet. Select text on a doc page to create one.'
+            : 'No annotations match your filter.'}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -181,7 +181,7 @@ export function HighlightsPage() {
                         );
                         return (
                           <Link
-                            to={`/docs/${doc.project}/${doc.section}/${doc.slug}`}
+                            to={`/docs/${doc.project}/${doc.section}/${doc.slug}#annotation-${h.id}`}
                             className="text-[10px] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] no-underline"
                           >
                             {doc.title}
