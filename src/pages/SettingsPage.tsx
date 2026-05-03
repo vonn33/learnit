@@ -6,6 +6,7 @@ import {Sun, Moon, Monitor, Download, Upload, Trash2, BookOpen, Columns2, FileTe
 import { useAnnotationStore } from '@/store/annotationStore';
 import { useMapStore } from '@/store/mapStore';
 import { useWorkspaceStore, type DefaultLayout } from '@/store/workspaceStore';
+import { supabase } from '@/lib/supabase';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -30,8 +31,6 @@ export function SettingsPage() {
   const setMode = useWorkspaceStore((s) => s.setMode);
   const setShowMap = useWorkspaceStore((s) => s.setShowMap);
   const setShowStagingInbox = useWorkspaceStore((s) => s.setShowStagingInbox);
-  const [clearConfirm, setClearConfirm] = useState(false);
-  const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge');
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -49,18 +48,30 @@ export function SettingsPage() {
     }
   }
 
-  function handleClear() {
-    if (clearConfirm) {
-      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
-      saveTags([]);
-      saveUserDiagrams([]);
-      useAnnotationStore.getState().reset();
-      useMapStore.getState().reset();
-      setClearConfirm(false);
-    } else {
-      setClearConfirm(true);
-      clearTimerRef.current = setTimeout(() => setClearConfirm(false), 5000);
-    }
+  async function handleReset() {
+    const confirmed = window.confirm(
+      'Permanently delete ALL documents, annotations, and maps? This cannot be undone.',
+    );
+    if (!confirmed) return;
+    const confirmed2 = window.confirm('Are you absolutely sure?');
+    if (!confirmed2) return;
+
+    // Wipe Supabase tables in dependency order
+    await supabase.from('annotations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('map_edges').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('map_nodes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('docs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('tags').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+    // Reset in-memory stores
+    useAnnotationStore.getState().reset();
+    useMapStore.getState().reset();
+
+    // Clear local UI prefs
+    localStorage.removeItem('handbook:ui');
+    localStorage.removeItem('learnit-workspace');
+
+    window.location.reload();
   }
 
   function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -253,16 +264,14 @@ export function SettingsPage() {
               <div className="text-xs text-[var(--color-muted-foreground)]">Permanently delete all highlights, tags, and diagrams</div>
             </div>
             <button
-              onClick={handleClear}
+              onClick={() => void handleReset()}
               className={[
                 'flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border transition-colors shrink-0',
-                clearConfirm
-                  ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                  : 'text-[var(--color-muted-foreground)] hover:text-red-400 hover:border-red-500/30',
+                'text-[var(--color-muted-foreground)] hover:text-red-400 hover:border-red-500/30',
               ].join(' ')}
             >
               <Trash2 size={13} />
-              {clearConfirm ? 'Confirm clear?' : 'Clear'}
+              Reset all data
             </button>
           </div>
         </div>
