@@ -1,11 +1,6 @@
-import {lazy, Suspense, useCallback, useEffect, useRef, type ComponentType, type LazyExoticComponent} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 import {useLocation, Navigate, useNavigate} from 'react-router';
-import {MDXProvider} from '@mdx-js/react';
-import {Verdict} from '@/components/mdx/Verdict';
-import {Callout} from '@/components/mdx/Callout';
-import {Compare} from '@/components/mdx/Compare';
-import {DataTable} from '@/components/mdx/DataTable';
-import {ConceptMap} from '@/components/mdx/ConceptMap';
+import {RuntimeMdx} from '@/components/mdx/RuntimeMdx';
 import {AnnotationLayer} from '@/components/reader/AnnotationLayer';
 import {AnnotationToggle} from '@/components/reader/AnnotationToggle';
 import {DocNav} from '@/components/reader/DocNav';
@@ -15,60 +10,39 @@ import {StagingInbox} from '@/components/map/StagingInbox';
 import {saveReadingProgress, getReadingProgress} from '@/lib/storage';
 import {useMapStore} from '@/store/mapStore';
 import {useWorkspaceStore} from '@/store/workspaceStore';
-import manifest from '@/data/content-manifest.json';
+import {useDocStore, type Doc} from '@/store/docStore';
 
-// Glob import all MDX files from local docs directory
-const modules = import.meta.glob('/docs/**/*.mdx');
+// TODO: integration tests for runtime-fetched docs are deferred until Supabase
+// is provisioned. The static-glob test was removed as part of the F2 migration.
 
-// Create lazy components once at module level — stable references, never recreated
-const lazyModules: Record<string, LazyExoticComponent<ComponentType>> = Object.fromEntries(
-  Object.entries(modules).map(([key, factory]) => [
-    key,
-    lazy(factory as () => Promise<{default: ComponentType}>),
-  ]),
-);
-
-const MDX_COMPONENTS = {
-  Verdict,
-  Callout,
-  Compare,
-  DataTable,
-  ConceptMap,
-};
-
-function getModuleKey(pathname: string): string | null {
-  // pathname: /docs/language-learning/handbook/part-1a-fluent-forever
-  const parts = pathname.replace(/^\/docs\//, '').split('/');
+function parsePath(pathname: string): {project: string; section: string; slug: string} | null {
+  const parts = pathname.replace(/^\/docs\/?/, '').split('/').filter(Boolean);
   if (parts.length < 3) return null;
-  const [category, section, ...rest] = parts;
+  const [project, section, ...rest] = parts;
   const slug = rest.join('/');
-  const candidate = `/docs/${category}/${section}/${slug}.mdx`;
-  return modules[candidate] ? candidate : null;
+  return {project, section, slug};
 }
 
 export function getFirstDocPathForTopic(topicId: string): string | null {
-  const typedManifest = manifest as Record<
-    string,
-    {sections: Record<string, {docs: string[]}>}
-  >;
-  const catData = typedManifest[topicId];
-  if (!catData) return null;
-  for (const [sec, secData] of Object.entries(catData.sections)) {
-    if (secData.docs[0]) return `/docs/${topicId}/${sec}/${secData.docs[0]}`;
+  const docs = useDocStore.getState().docs;
+  const candidates = docs.filter((d) => d.project === topicId);
+  if (candidates.length === 0) return null;
+  // Pick first by section, then by created order (already ordered by createdAt desc in fetchAll)
+  const sectionsSeen: Record<string, Doc> = {};
+  for (const d of candidates) {
+    if (!sectionsSeen[d.section]) sectionsSeen[d.section] = d;
   }
-  return null;
+  const firstSectionKey = Object.keys(sectionsSeen)[0];
+  if (!firstSectionKey) return null;
+  const d = sectionsSeen[firstSectionKey];
+  return `/docs/${d.project}/${d.section}/${d.slug}`;
 }
 
 function getFirstDocPath(): string {
-  const typedManifest = manifest as Record<
-    string,
-    {sections: Record<string, {docs: string[]}>}
-  >;
-  for (const [cat] of Object.entries(typedManifest)) {
-    const path = getFirstDocPathForTopic(cat);
-    if (path) return path;
-  }
-  return '/docs';
+  const docs = useDocStore.getState().docs;
+  if (docs.length === 0) return '/docs';
+  const d = docs[0];
+  return `/docs/${d.project}/${d.section}/${d.slug}`;
 }
 
 function ProgressBar({pageUrl}: {pageUrl: string}) {
@@ -113,8 +87,40 @@ export function DocsPage() {
   const pathname = location.pathname;
   const showStagingInbox = useWorkspaceStore((s) => s.showStagingInbox);
 
-  // Extract topicId (category) from pathname: /docs/language-learning/...
-  const topicId = pathname.split('/')[2] ?? '';
+  const docs = useDocStore((s) => s.docs);
+  const activeContent = useDocStore((s) => s.activeContent);
+  const loading = useDocStore((s) => s.loading);
+  const fetchAll = useDocStore((s) => s.fetchAll);
+  const fetchContent = useDocStore((s) => s.fetchContent);
+
+  const parsed = parsePath(pathname);
+  const slug = parsed?.slug ?? '';
+  const project = parsed?.project ?? '';
+  const section = parsed?.section ?? '';
+
+  // Locate metadata for the current path. Match on slug + project + section to
+  // disambiguate slugs that may collide across projects.
+  const meta = parsed
+    ? docs.find((d) => d.slug === slug && d.project === project && d.section === section) ?? null
+    : null;
+
+  // topicId historically scopes the concept map by project/category, not by doc.
+  // Keep that semantic — use the project segment so existing maps remain reachable.
+  const topicId = project;
+
+  // Trigger fetchAll on mount when docs list is empty.
+  useEffect(() => {
+    if (docs.length === 0 && !loading) {
+      void fetchAll();
+    }
+  }, [docs.length, loading, fetchAll]);
+
+  // Fetch content whenever the slug changes.
+  useEffect(() => {
+    if (!slug) return;
+    if (activeContent?.slug === slug) return;
+    void fetchContent(slug);
+  }, [slug, activeContent?.slug, fetchContent]);
 
   // ALL hooks must be called before any early returns
   const handleMapNodeClick = useCallback((nodeId: string) => {
@@ -143,22 +149,37 @@ export function DocsPage() {
     [topicId, navigate],
   );
 
-  const moduleKey = getModuleKey(pathname);
-  const Content = moduleKey ? lazyModules[moduleKey] : null;
-
-  // Redirect bare /docs or incomplete /docs/<category>[/<section>] to first available doc
-  const segments = pathname.replace(/^\/docs\/?/, '').split('/').filter(Boolean);
-  if (segments.length < 3) {
+  // Redirect bare /docs or incomplete /docs/<category>[/<section>] to first available doc.
+  // Defer redirect until docs have loaded so we don't bounce to '/docs'.
+  if (!parsed) {
+    if (docs.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-full text-[var(--color-muted-foreground)] text-sm">
+          Loading…
+        </div>
+      );
+    }
     return <Navigate to={getFirstDocPath()} replace />;
   }
 
-  if (!moduleKey || !Content) {
+  // Doc list still loading, no meta yet — show loading state.
+  if (!meta) {
+    if (loading || docs.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-full text-[var(--color-muted-foreground)] text-sm">
+          Loading…
+        </div>
+      );
+    }
     return (
       <div className="flex items-center justify-center h-full text-[var(--color-muted-foreground)] text-sm">
         Page not found. Check the sidebar for available content.
       </div>
     );
   }
+
+  // Content not yet fetched (or fetching a different slug).
+  const contentReady = activeContent && activeContent.slug === slug;
 
   const leftPane = (
     <div id="docs-content" className="h-full overflow-y-auto">
@@ -167,13 +188,13 @@ export function DocsPage() {
         <AnnotationToggle />
       </div>
       <div className="max-w-3xl mx-auto px-6 py-4">
-        <MDXProvider components={MDX_COMPONENTS}>
-          <article className="prose">
-            <Suspense fallback={<div className="text-[var(--color-muted-foreground)] text-sm">Loading…</div>}>
-              <Content />
-            </Suspense>
-          </article>
-        </MDXProvider>
+        <article className="prose">
+          {contentReady ? (
+            <RuntimeMdx source={activeContent.content_md} />
+          ) : (
+            <div className="text-[var(--color-muted-foreground)] text-sm">Loading…</div>
+          )}
+        </article>
       </div>
       <DocNav currentPath={pathname} />
       <AnnotationLayer pageUrl={pathname} topicId={topicId} />
