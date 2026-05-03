@@ -14,6 +14,7 @@ export function ImportWizard({ open, onClose }: { open: boolean; onClose: () => 
   const navigate = useNavigate();
 
   async function handleFiles(files: File[]) {
+    setError(null);
     const parsedNew: ParsedFile[] = await Promise.all(
       files.map(async (f) => {
         const text = await f.text();
@@ -24,6 +25,22 @@ export function ImportWizard({ open, onClose }: { open: boolean; onClose: () => 
   }
 
   async function handleSubmit() {
+    // Within-batch duplicate slug check
+    const slugs = parsed.map((p) => p.slug);
+    const dupes = slugs.filter((s, i) => slugs.indexOf(s) !== i);
+    if (dupes.length > 0) {
+      setError(`Duplicate slugs in batch: ${[...new Set(dupes)].join(', ')}. Fix before importing.`);
+      return;
+    }
+
+    // Existing-doc conflict check
+    const existingSlugs = new Set(useDocStore.getState().docs.map((d) => d.slug));
+    const conflicts = parsed.filter((p) => existingSlugs.has(p.slug)).map((p) => p.slug);
+    if (conflicts.length > 0) {
+      setError(`Slug already exists: ${conflicts.join(', ')}. Change the slug before importing.`);
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
     try {
@@ -43,14 +60,14 @@ export function ImportWizard({ open, onClose }: { open: boolean; onClose: () => 
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { setError(null); onClose(); } }}>
       <DialogPortal>
         <DialogOverlay className="fixed inset-0 z-40 bg-black/50" />
         <DialogContent className="fixed inset-0 z-50 grid place-items-center p-4 outline-none">
           <div className="bg-[var(--color-background)] rounded-lg w-full max-w-3xl max-h-[85vh] overflow-y-auto p-6 space-y-4">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg font-semibold">Import documents</DialogTitle>
-              <button onClick={onClose} className="p-1 hover:bg-[var(--color-accent)] rounded"><X className="size-4" /></button>
+              <button onClick={() => { setError(null); onClose(); }} className="p-1 hover:bg-[var(--color-accent)] rounded"><X className="size-4" /></button>
             </div>
 
             <UploadDropzone onFiles={handleFiles} />
