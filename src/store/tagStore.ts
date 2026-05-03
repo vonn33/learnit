@@ -38,9 +38,38 @@ export const useTagStore = create<TagStore>((set) => ({
     }
     set({ tags: (data ?? []).map(rowToTag) });
   },
-  addTag: async () => { throw new Error('not implemented'); },
-  updateTag: async () => {},
-  removeTag: async () => {},
+  addTag: async (input) => {
+    const { data, error } = await supabase
+      .from('tags')
+      .insert(tagToRow(input))
+      .select()
+      .single();
+    if (error || !data) throw new Error(error?.message ?? 'addTag failed');
+    const tag = rowToTag(data as TagRow);
+    set((s) =>
+      s.tags.find((t) => t.id === tag.id)
+        ? s
+        : { tags: [...s.tags, tag] },
+    );
+    return tag;
+  },
+
+  updateTag: async (id, patch) => {
+    const dbPatch: Partial<Pick<TagRow, 'label' | 'color'>> = {};
+    if (patch.name !== undefined) dbPatch.label = patch.name;
+    if (patch.color !== undefined) dbPatch.color = patch.color;
+    const { error } = await supabase.from('tags').update(dbPatch).eq('id', id);
+    if (error) return;
+    set((s) => ({
+      tags: s.tags.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+    }));
+  },
+
+  removeTag: async (id) => {
+    const { error } = await supabase.from('tags').delete().eq('id', id);
+    if (error) return;
+    set((s) => ({ tags: s.tags.filter((t) => t.id !== id) }));
+  },
   subscribeRealtime: () => () => {},
   reset: () => set({ tags: [] }),
 }));
