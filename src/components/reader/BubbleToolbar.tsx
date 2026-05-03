@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
-import {type Tag, getTags} from '@/lib/storage';
+import {useTagStore, type Tag} from '@/store/tagStore';
 import {
   buildAnchorContext,
   getHighlightColorForTags,
@@ -22,7 +22,7 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
   const [pos, setPos] = useState({top: -9999, left: -9999});
   const [savedRange, setSavedRange] = useState<Range | null>(null);
   const [selectedText, setSelectedText] = useState('');
-  const [tags, setTags] = useState<Tag[]>([]);
+  const tags = useTagStore((s) => s.tags);
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   const [showTagMenu, setShowTagMenu] = useState(false);
   const [showNoteInput, setShowNoteInput] = useState(false);
@@ -36,8 +36,6 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
   const shouldRender = useDelayedUnmount(visible, 100);
 
   useEffect(() => {
-    setTags(getTags());
-
     function onSelectionChange() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {

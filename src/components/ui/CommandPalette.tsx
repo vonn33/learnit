@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router';
-import {getTags} from '@/lib/storage';
+import {useTagStore} from '@/store/tagStore';
 import {useAnnotationStore} from '@/store/annotationStore';
 import {useDocStore, type Doc} from '@/store/docStore';
 import {Search, FileText, Tag} from 'lucide-react';
@@ -98,7 +98,7 @@ export function CommandPalette({open, onClose}: CommandPaletteProps) {
     });
 
     // Highlights
-    const tags = getTags();
+    const tags = useTagStore.getState().tags;
     for (const h of useAnnotationStore.getState().annotations) {
       if (h.text.toLowerCase().includes(q) || h.note.toLowerCase().includes(q)) {
         const hTags = tags.filter((t) => h.tagIds.includes(t.id)).map((t) => t.name).join(', ');

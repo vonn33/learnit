@@ -1,7 +1,6 @@
 import {useRef, useState} from 'react';
 import {useHandbookStore} from '@/store';
 import {downloadExport, importData} from '@/lib/exportImport';
-import {saveTags, saveUserDiagrams} from '@/lib/storage';
 import {Sun, Moon, Monitor, Download, Upload, Trash2, BookOpen, Columns2, FileText, Network} from 'lucide-react';
 import { useAnnotationStore } from '@/store/annotationStore';
 import { useMapStore } from '@/store/mapStore';

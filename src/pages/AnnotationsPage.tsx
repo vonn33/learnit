@@ -1,9 +1,6 @@
 import {useRef, useState} from 'react';
 import {Link} from 'react-router';
-import {
-  type Tag,
-  getTags,
-} from '@/lib/storage';
+import {useTagStore, type Tag} from '@/store/tagStore';
 import {downloadExport, importData} from '@/lib/exportImport';
 import {hexToRgba} from '@/lib/highlights';
 import {useAnnotationStore, type Annotation} from '@/store/annotationStore';
@@ -14,7 +11,7 @@ import {Search, Tag as TagIcon, Download, Upload, X} from 'lucide-react';
 export function AnnotationsPage() {
   const annotations = useAnnotationStore((s) => s.annotations);
   const docs = useDocStore((s) => s.docs);
-  const [tags, setTags] = useState<Tag[]>(() => getTags());
+  const tags = useTagStore((s) => s.tags);
   const [query, setQuery] = useState('');
   const [activeTagId, setActiveTagId] = useState<string | null>(null);
   const [showTagManager, setShowTagManager] = useState(false);
@@ -98,7 +95,7 @@ export function AnnotationsPage() {
       {/* Tag Manager panel */}
       {showTagManager && (
         <div className="mb-6 p-4 rounded-xl border bg-[var(--color-card)]">
-          <TagManager onClose={() => {setShowTagManager(false); setTags(getTags());}} />
+          <TagManager onClose={() => setShowTagManager(false)} />
         </div>
       )}
 

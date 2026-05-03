@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {getTags} from '@/lib/storage';
+import {useTagStore} from '@/store/tagStore';
 import {applyHighlightsToDOM} from '@/lib/highlights';
 import {BubbleToolbar} from './BubbleToolbar';
 import {NotePanel} from './NotePanel';
@@ -19,11 +19,11 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
   const appliedRef = useRef(false);
   const showAnnotations = useAnnotationStore((s) => s.showAnnotations);
   const annotations = useAnnotationStore((s) => s.annotations);
+  const tags = useTagStore((s) => s.tags);
 
   // Re-apply marks whenever annotations or page changes
   useEffect(() => {
     appliedRef.current = false;
-    const tags = getTags();
     const pageAnnotations = annotations.filter((a) => a.docId === pageUrl);
 
     const tryApply = () => {
@@ -79,7 +79,7 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [pageUrl, showAnnotations, annotations]);
+  }, [pageUrl, showAnnotations, annotations, tags]);
 
   // Click handler: mark clicks → NotePanel; note-dot clicks → NoteTooltip
   useEffect(() => {
@@ -126,7 +126,7 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
           annotationId={activeAnnotationId}
           topicId={topicId}
           anchorRect={markRect}
-          tags={getTags()}
+          tags={tags}
           onClose={() => setActiveAnnotationId(null)}
           onDelete={(id) => {
             const mark = document.querySelector(`mark[data-highlight-id="${id}"]`);
