@@ -34,7 +34,7 @@ create table annotations (
   type text not null check (type in ('highlight','note','quick-capture')),
   text text not null default '',
   anchor_context text not null default '',
-  tag_ids uuid[] not null default '{}',
+  tag_ids text[] not null default '{}',
   note text not null default '',
   connection_url text not null default '',
   map_node_id uuid,

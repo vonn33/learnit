@@ -84,7 +84,11 @@ export const useAnnotationStore = create<AnnotationStore>((set, get) => ({
       .single();
     if (error || !data) throw new Error(error?.message ?? 'addAnnotation failed');
     const annotation = rowToAnnotation(data as AnnotationRow);
-    set((s) => ({ annotations: [...s.annotations, annotation] }));
+    set((s) =>
+      s.annotations.find((x) => x.id === annotation.id)
+        ? s
+        : { annotations: [...s.annotations, annotation] },
+    );
     return annotation.id;
   },
 
