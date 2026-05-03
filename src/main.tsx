@@ -11,6 +11,22 @@ import {DiagramsPage} from '@/pages/DiagramsPage';
 import {SettingsPage} from '@/pages/SettingsPage';
 import ContentManagementPage from '@/pages/ContentManagementPage';
 
+const MIGRATION_FLAG = 'handbook:supabase-migration-done';
+if (!localStorage.getItem(MIGRATION_FLAG)) {
+  const stale = ['handbook:annotations', 'handbook:maps'];
+  const hasStale = stale.some((k) => localStorage.getItem(k));
+  if (hasStale) {
+    if (
+      window.confirm(
+        'LearnIt has migrated to cloud sync. Local annotations and maps from before this version cannot be carried over. Clear stale local data?',
+      )
+    ) {
+      stale.forEach((k) => localStorage.removeItem(k));
+    }
+  }
+  localStorage.setItem(MIGRATION_FLAG, '1');
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
