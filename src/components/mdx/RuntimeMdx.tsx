@@ -4,6 +4,7 @@ import * as runtime from 'react/jsx-runtime';
 import * as devRuntime from 'react/jsx-dev-runtime';
 import remarkGfm from 'remark-gfm';
 import remarkFrontmatter from 'remark-frontmatter';
+import rehypeSlug from 'rehype-slug';
 import { Verdict } from '@/components/mdx/Verdict';
 import { Callout } from '@/components/mdx/Callout';
 import { Compare } from '@/components/mdx/Compare';
@@ -30,6 +31,7 @@ export function RuntimeMdx({ source }: { source: string }) {
           ...runtime,
           ...(import.meta.env.DEV ? devRuntime : {}),
           remarkPlugins: [remarkFrontmatter, remarkGfm],
+          rehypePlugins: [rehypeSlug],
         });
         const Content = mod.default as (props: { components: typeof components }) => ReactElement;
         const rendered = <Content components={components} />;
