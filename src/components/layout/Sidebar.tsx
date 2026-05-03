@@ -1,30 +1,30 @@
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {NavLink, Link} from 'react-router';
 import {ChevronDown, ChevronRight, ChevronLeft, Upload, Settings2} from 'lucide-react';
-import manifest from '@/data/content-manifest.json';
 import {useWorkspaceStore} from '@/store/workspaceStore';
+import {useDocStore, type Doc} from '@/store/docStore';
 import {ImportWizard} from '@/components/import/ImportWizard';
 
-type DocEntry = string;
-type Section = {label: string; link: string; docs: DocEntry[]};
-type Category = {label: string; link: string; sections: Record<string, Section>};
-type Manifest = Record<string, Category>;
+function humanize(s: string): string {
+  return s
+    .split('-')
+    .map((w) => (w[0]?.toUpperCase() ?? '') + w.slice(1))
+    .join(' ');
+}
 
-const typedManifest = manifest as Manifest;
-
-function docPath(categoryKey: string, sectionKey: string, docSlug: string): string {
-  return `/docs/${categoryKey}/${sectionKey}/${docSlug}`;
+function docPath(projectKey: string, sectionKey: string, slug: string): string {
+  return `/docs/${projectKey}/${sectionKey}/${slug}`;
 }
 
 function SectionItem({
-  categoryKey,
+  projectKey,
   sectionKey,
-  section,
+  docs,
   defaultOpen,
 }: {
-  categoryKey: string;
+  projectKey: string;
   sectionKey: string;
-  section: Section;
+  docs: Doc[];
   defaultOpen: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -35,14 +35,14 @@ function SectionItem({
         className="w-full flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
       >
         {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        {section.label}
+        {humanize(sectionKey)}
       </button>
       {open && (
         <div className="ml-3 border-l pl-2 flex flex-col gap-0.5">
-          {section.docs.map((slug) => (
+          {docs.map((doc) => (
             <NavLink
-              key={slug}
-              to={docPath(categoryKey, sectionKey, slug)}
+              key={doc.id}
+              to={docPath(projectKey, sectionKey, doc.slug)}
               className={({isActive}) =>
                 [
                   'block px-2 py-1.5 text-xs rounded truncate transition-colors no-underline',
@@ -52,7 +52,7 @@ function SectionItem({
                 ].join(' ')
               }
             >
-              {slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+              {doc.title}
             </NavLink>
           ))}
         </div>
@@ -61,8 +61,15 @@ function SectionItem({
   );
 }
 
-function CategoryItem({categoryKey, category}: {categoryKey: string; category: Category}) {
+function ProjectItem({
+  projectKey,
+  sections,
+}: {
+  projectKey: string;
+  sections: Record<string, Doc[]>;
+}) {
   const [open, setOpen] = useState(true);
+  const sectionEntries = Object.entries(sections);
   return (
     <div className="mb-2">
       <button
@@ -70,16 +77,16 @@ function CategoryItem({categoryKey, category}: {categoryKey: string; category: C
         className="w-full flex items-center gap-2 px-3 py-2 text-sm font-semibold text-[var(--color-foreground)] hover:bg-[var(--color-accent)] rounded transition-colors"
       >
         {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        {category.label}
+        {humanize(projectKey)}
       </button>
       {open && (
         <div className="flex flex-col gap-1">
-          {Object.entries(category.sections).map(([sectionKey, section], i) => (
+          {sectionEntries.map(([sectionKey, docs], i) => (
             <SectionItem
               key={sectionKey}
-              categoryKey={categoryKey}
+              projectKey={projectKey}
               sectionKey={sectionKey}
-              section={section}
+              docs={docs}
               defaultOpen={i === 0}
             />
           ))}
@@ -93,6 +100,17 @@ export function Sidebar({className = ''}: {className?: string}) {
   const collapsed = useWorkspaceStore((s) => s.sidebarCollapsed);
   const setSidebarCollapsed = useWorkspaceStore((s) => s.setSidebarCollapsed);
   const [importOpen, setImportOpen] = useState(false);
+  const docs = useDocStore((s) => s.docs);
+
+  const grouped = useMemo(() => {
+    const out: Record<string, Record<string, Doc[]>> = {};
+    for (const d of docs) {
+      out[d.project] ??= {};
+      out[d.project][d.section] ??= [];
+      out[d.project][d.section].push(d);
+    }
+    return out;
+  }, [docs]);
 
   return (
     <aside
@@ -119,8 +137,8 @@ export function Sidebar({className = ''}: {className?: string}) {
             </Link>
           </div>
           <ImportWizard open={importOpen} onClose={() => setImportOpen(false)} />
-          {Object.entries(typedManifest).map(([key, category]) => (
-            <CategoryItem key={key} categoryKey={key} category={category} />
+          {Object.entries(grouped).map(([projectKey, sections]) => (
+            <ProjectItem key={projectKey} projectKey={projectKey} sections={sections} />
           ))}
         </div>
       )}

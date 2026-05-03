@@ -4,6 +4,8 @@ import {Navbar} from './Navbar';
 import {Sidebar} from './Sidebar';
 import {Menu, X} from 'lucide-react';
 import {CommandPalette} from '@/components/ui/CommandPalette';
+import {useDocStore} from '@/store/docStore';
+import {useAnnotationStore} from '@/store/annotationStore';
 
 const SIDEBAR_ROUTES = ['/docs'];
 
@@ -12,6 +14,18 @@ export function Shell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const showSidebar = SIDEBAR_ROUTES.some((r) => location.pathname.startsWith(r));
+
+  useEffect(() => {
+    const docFetch = useDocStore.getState().fetchAll();
+    const annFetch = useAnnotationStore.getState().fetchAll();
+    void Promise.all([docFetch, annFetch]);
+    const unsub1 = useDocStore.getState().subscribeRealtime();
+    const unsub2 = useAnnotationStore.getState().subscribeRealtime();
+    return () => {
+      unsub1();
+      unsub2();
+    };
+  }, []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
