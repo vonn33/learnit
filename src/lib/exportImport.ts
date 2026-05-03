@@ -1,22 +1,31 @@
 import { useAnnotationStore, type Annotation } from '@/store/annotationStore';
-import { supabase, type AnnotationRow, type TagRow } from '@/lib/supabase';
+import { supabase, type AnnotationRow, type TagRow, type MapNodeRow, type MapEdgeRow } from '@/lib/supabase';
 
 export type ExportData = {
   annotations: Annotation[];
   tags: TagRow[];
+  map_nodes: MapNodeRow[];
+  map_edges: MapEdgeRow[];
 };
 
-export function exportData(): ExportData {
+export async function exportData(): Promise<ExportData> {
   const annotations = useAnnotationStore.getState().annotations;
-  // Tags live in Supabase; the annotation store doesn't hold them, so we
-  // export whatever tag rows have been fetched into the annotation store's
-  // sibling context.  For now we export an empty array — callers that need
-  // tags should extend this once a tagStore is introduced.
-  return { annotations, tags: [] };
+
+  // Fetch tags, map nodes, and map edges from Supabase
+  const { data: tags } = await supabase.from('tags').select('*');
+  const { data: mapNodes } = await supabase.from('map_nodes').select('*');
+  const { data: mapEdges } = await supabase.from('map_edges').select('*');
+
+  return {
+    annotations,
+    tags: tags ?? [],
+    map_nodes: mapNodes ?? [],
+    map_edges: mapEdges ?? [],
+  };
 }
 
-export function downloadExport(): void {
-  const data = exportData();
+export async function downloadExport(): Promise<void> {
+  const data = await exportData();
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -62,7 +71,23 @@ export async function importData(data: unknown, _mode?: 'replace' | 'merge'): Pr
     if (error) throw new Error(`Annotations upsert failed: ${error.message}`);
   }
 
-  // 3. Re-hydrate the in-memory store from Supabase
+  // 3. Upsert map nodes
+  if (parsed.map_nodes.length > 0) {
+    const { error } = await supabase
+      .from('map_nodes')
+      .upsert(parsed.map_nodes, { onConflict: 'id' });
+    if (error) throw new Error(`Map nodes upsert failed: ${error.message}`);
+  }
+
+  // 4. Upsert map edges
+  if (parsed.map_edges.length > 0) {
+    const { error } = await supabase
+      .from('map_edges')
+      .upsert(parsed.map_edges, { onConflict: 'id' });
+    if (error) throw new Error(`Map edges upsert failed: ${error.message}`);
+  }
+
+  // 5. Re-hydrate the in-memory store from Supabase
   await useAnnotationStore.getState().fetchAll();
 }
 
@@ -74,5 +99,7 @@ function validateImport(data: unknown): ExportData {
   return {
     annotations: Array.isArray(d.annotations) ? (d.annotations as Annotation[]) : [],
     tags: Array.isArray(d.tags) ? (d.tags as TagRow[]) : [],
+    map_nodes: Array.isArray(d.map_nodes) ? (d.map_nodes as MapNodeRow[]) : [],
+    map_edges: Array.isArray(d.map_edges) ? (d.map_edges as MapEdgeRow[]) : [],
   };
 }

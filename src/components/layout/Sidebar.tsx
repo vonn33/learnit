@@ -140,6 +140,11 @@ export function Sidebar({className = ''}: {className?: string}) {
           {Object.entries(grouped).map(([projectKey, sections]) => (
             <ProjectItem key={projectKey} projectKey={projectKey} sections={sections} />
           ))}
+          {Object.keys(grouped).length === 0 && (
+            <p className="px-3 py-4 text-xs text-[var(--color-muted-foreground)]">
+              No documents yet. Click "Import .md" to add your first one.
+            </p>
+          )}
         </div>
       )}
 

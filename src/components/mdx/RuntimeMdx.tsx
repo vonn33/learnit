@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react';
+import { Component, useEffect, useState, type ReactElement, type ReactNode } from 'react';
 import { evaluate } from '@mdx-js/mdx';
 import * as runtime from 'react/jsx-runtime';
 import * as devRuntime from 'react/jsx-dev-runtime';
@@ -14,6 +14,26 @@ import { ConceptMap } from '@/components/mdx/ConceptMap';
 const components = { Verdict, Callout, Compare, DataTable, ConceptMap };
 
 const cache = new Map<string, ReactElement>();
+
+class MdxErrorBoundary extends Component<
+  { children: ReactNode },
+  { error: string | null }
+> {
+  state = { error: null };
+  static getDerivedStateFromError(e: Error) {
+    return { error: e.message };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <pre className="text-red-500 p-4 text-sm">
+          MDX render error: {this.state.error}
+        </pre>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export function RuntimeMdx({ source }: { source: string }) {
   const [el, setEl] = useState<ReactElement | null>(() => cache.get(source) ?? null);
@@ -48,5 +68,5 @@ export function RuntimeMdx({ source }: { source: string }) {
 
   if (error) return <pre className="text-red-500 p-4">{error}</pre>;
   if (!el) return <div className="p-4 text-[var(--color-muted-foreground)]">Loading…</div>;
-  return el;
+  return <MdxErrorBoundary>{el}</MdxErrorBoundary>;
 }

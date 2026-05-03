@@ -121,7 +121,7 @@ export function SettingsPage() {
             <strong className="text-[var(--color-foreground)]">Diagrams:</strong> Create concept maps and mind maps from templates. Drag nodes to rearrange; changes auto-save.
           </p>
           <p>
-            <strong className="text-[var(--color-foreground)]">Data:</strong> Everything is stored locally in your browser. Export to back up, import to restore.
+            <strong className="text-[var(--color-foreground)]">Data:</strong> Data syncs across devices via Supabase. Only layout preferences are stored locally. Export to back up, import to restore.
           </p>
         </div>
       </section>
@@ -218,7 +218,7 @@ export function SettingsPage() {
               <div className="text-xs text-[var(--color-muted-foreground)]">Download all highlights, tags, and diagrams as JSON</div>
             </div>
             <button
-              onClick={downloadExport}
+              onClick={() => void downloadExport()}
               className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-accent)] transition-colors shrink-0"
             >
               <Download size={13} />
