@@ -7,7 +7,7 @@ import {CommandPalette} from '@/components/ui/CommandPalette';
 import {useDocStore} from '@/store/docStore';
 import {useAnnotationStore} from '@/store/annotationStore';
 
-const SIDEBAR_ROUTES = ['/docs'];
+const SIDEBAR_ROUTES = ['/docs', '/manage'];
 
 export function Shell() {
   const location = useLocation();
