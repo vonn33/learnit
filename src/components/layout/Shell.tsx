@@ -6,6 +6,7 @@ import {Menu, X} from 'lucide-react';
 import {CommandPalette} from '@/components/ui/CommandPalette';
 import {useDocStore} from '@/store/docStore';
 import {useAnnotationStore} from '@/store/annotationStore';
+import {useMapStore} from '@/store/mapStore';
 
 const SIDEBAR_ROUTES = ['/docs', '/manage'];
 
@@ -21,9 +22,11 @@ export function Shell() {
     void Promise.all([docFetch, annFetch]);
     const unsub1 = useDocStore.getState().subscribeRealtime();
     const unsub2 = useAnnotationStore.getState().subscribeRealtime();
+    const unsub3 = useMapStore.getState().subscribeRealtime();
     return () => {
       unsub1();
       unsub2();
+      unsub3();
     };
   }, []);
 

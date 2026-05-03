@@ -106,6 +106,7 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
   const maps = useMapStore((s) => s.maps);
   const initMap = useMapStore((s) => s.initMap);
   const loadScaffold = useMapStore((s) => s.loadScaffold);
+  const fetchByTopic = useMapStore((s) => s.fetchByTopic);
   const updateNodePositions = useMapStore((s) => s.updateNodePositions);
   const storeAddEdge = useMapStore((s) => s.addEdge);
   const updateNode = useMapStore((s) => s.updateNode);
@@ -152,19 +153,24 @@ export function MapCanvas({ topicId, onAnnotationJump, onNodeDoubleClick }: MapC
     return out;
   }, [docs]);
 
-  // Initialize map from scaffold on first open
+  // Initialize map: fetch from Supabase first, scaffold only if DB has no nodes
   useEffect(() => {
-    if (maps[topicId]) return;
-    const scaffold = generateScaffold(
-      derivedManifest as Parameters<typeof generateScaffold>[0],
-      topicId,
-    );
-    if (scaffold.length > 0) {
-      loadScaffold(topicId, scaffold);
-    } else {
-      initMap(topicId);
-    }
-  }, [topicId, maps, initMap, loadScaffold, derivedManifest]);
+    (async () => {
+      await fetchByTopic(topicId);
+      const current = useMapStore.getState().maps[topicId];
+      if (!current || current.nodes.length === 0) {
+        const scaffold = generateScaffold(
+          derivedManifest as Parameters<typeof generateScaffold>[0],
+          topicId,
+        );
+        if (scaffold.length > 0) {
+          loadScaffold(topicId, scaffold);
+        } else {
+          initMap(topicId);
+        }
+      }
+    })();
+  }, [topicId, fetchByTopic, initMap, loadScaffold, derivedManifest]);
 
   const topicMap = maps[topicId];
   const initialNodes = useMemo(() => (topicMap ? toFlowNodes(topicMap.nodes) : []), [topicMap]);

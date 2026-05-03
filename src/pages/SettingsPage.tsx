@@ -81,9 +81,16 @@ export function SettingsPage() {
     reader.onload = () => {
       try {
         const data = JSON.parse(reader.result as string);
-        importData(data, importMode);
-        setImportStatus('Import successful.');
-        setTimeout(() => setImportStatus(null), 3000);
+        void importData(data, importMode)
+          .then(() => {
+            setImportStatus('Import successful.');
+            setTimeout(() => setImportStatus(null), 3000);
+          })
+          .catch((e) => {
+            console.error('Import failed:', e);
+            setImportStatus('Import failed. Check console for details.');
+            setTimeout(() => setImportStatus(null), 3000);
+          });
       } catch {
         setImportStatus('Invalid file format.');
         setTimeout(() => setImportStatus(null), 3000);

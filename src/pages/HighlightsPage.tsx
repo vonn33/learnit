@@ -48,7 +48,10 @@ export function HighlightsPage() {
     reader.onload = () => {
       try {
         const data = JSON.parse(reader.result as string);
-        importData(data, 'merge');
+        void importData(data, 'merge').catch((e) => {
+          console.error('Import failed:', e);
+          alert('Import failed. Check console for details.');
+        });
       } catch {
         alert('Invalid file format.');
       }
