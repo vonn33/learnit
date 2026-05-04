@@ -67,7 +67,12 @@ export function useTextSelection({
 
   useEffect(() => {
     if (trigger !== 'touch') return;
-    function onTouchEnd() {
+    function onTouchEnd(e: TouchEvent) {
+      // Skip if the touch ends inside our popover/sheet — otherwise tapping
+      // the Highlight button would collapse the native selection and clear
+      // our captured selection before the click handler reads it.
+      const target = e.target;
+      if (target instanceof Element && target.closest('[data-highlight-popover="true"]')) return;
       evaluate();
     }
     document.addEventListener('touchend', onTouchEnd);

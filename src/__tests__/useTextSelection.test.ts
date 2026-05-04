@@ -122,5 +122,38 @@ describe('useTextSelection (touch mode)', () => {
     });
     expect(result.current.selection?.text).toBe('quick');
   });
+
+  it('does NOT clear selection when touchend target is inside [data-highlight-popover]', () => {
+    const c = makeContainer('the quick brown fox');
+    const popover = document.createElement('div');
+    popover.setAttribute('data-highlight-popover', 'true');
+    const button = document.createElement('button');
+    button.textContent = 'Highlight';
+    popover.appendChild(button);
+    document.body.appendChild(popover);
+
+    const { result } = renderHook(() =>
+      useTextSelection({ containerSelector: '.prose', trigger: 'touch' }),
+    );
+
+    // First, valid selection
+    act(() => {
+      makeSelection(c.firstChild!, 4, 9);
+      document.dispatchEvent(new Event('touchend'));
+    });
+    expect(result.current.selection?.text).toBe('quick');
+
+    // Then, simulated tap on the popover button — selection should NOT be cleared
+    act(() => {
+      // Collapse the native selection (mimics what the browser does on tap)
+      window.getSelection()?.removeAllRanges();
+      // Dispatch touchend with the button as target
+      const event = new Event('touchend', { bubbles: true });
+      Object.defineProperty(event, 'target', { value: button, writable: false });
+      document.dispatchEvent(event);
+    });
+    // Selection captured before the tap should still be present
+    expect(result.current.selection?.text).toBe('quick');
+  });
 });
 
