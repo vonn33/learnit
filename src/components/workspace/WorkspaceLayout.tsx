@@ -2,6 +2,7 @@ import {type ReactNode} from 'react';
 import {PaneHandle} from './PaneHandle';
 import {Maximize2, Columns2, Eye, EyeOff} from 'lucide-react';
 import {useWorkspaceStore} from '@/store/workspaceStore';
+import {Z} from '@/lib/zIndex';
 
 interface WorkspaceLayoutProps {
   left: ReactNode;
@@ -98,7 +99,7 @@ export function WorkspaceLayout({left, right}: WorkspaceLayoutProps) {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    zIndex: 18,
+                    zIndex: Z.FOCUS_RIGHT_PANE,
                   }
                 : {
                     flexGrow: mode === 'split' ? 1 : undefined,
