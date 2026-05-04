@@ -239,7 +239,15 @@ export function DocsPage() {
   );
 
   const rightPane = (
-    <div className="relative h-full">
+    <div
+      className="relative self-start"
+      style={{
+        position: 'sticky',
+        top: 'calc(56px + 36px)',
+        height: 'calc(100dvh - 56px - 36px)',
+        touchAction: 'none',
+      }}
+    >
       <MapCanvas topicId={topicId} onAnnotationJump={handleMapNodeClick} onNodeDoubleClick={handleMapNodeDoubleClick} />
       {showStagingInbox && <StagingInbox topicId={topicId} />}
     </div>
