@@ -8,7 +8,7 @@ import {clampToViewport} from '@/lib/positioning';
 import {useDelayedUnmount} from '@/lib/useDelayedUnmount';
 import {useMapStore} from '@/store/mapStore';
 import {useAnnotationStore} from '@/store/annotationStore';
-import {Zap, MapPin, ChevronDown, Link2} from 'lucide-react';
+import {Zap, MapPin, ChevronDown, Link2, Pencil} from 'lucide-react';
 import {NodePicker} from '@/components/map/NodePicker';
 
 interface BubbleToolbarProps {
@@ -33,13 +33,12 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const addAnnotation = useAnnotationStore((s) => s.addAnnotation);
   const addNode = useMapStore((s) => s.addNode);
-  const shouldRender = useDelayedUnmount(visible, 100);
+  const shouldRender = useDelayedUnmount(visible, 120);
 
   useEffect(() => {
     function onSelectionChange() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        // Don't hide if focus is inside our toolbar (e.g. note input is focused)
         if (toolbarRef.current?.contains(document.activeElement)) return;
 
         const sel = window.getSelection();
@@ -103,7 +102,6 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
   const doHighlight = useCallback(
     async (note = '') => {
       if (!savedRange || !selectedText) return;
-      // DOM-based dedup: if selection is inside/overlapping an existing mark, open it
       const ancestor = savedRange.commonAncestorContainer;
       const ancestorEl = ancestor.nodeType === Node.TEXT_NODE
         ? ancestor.parentElement
@@ -219,10 +217,11 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
     setVisible(false);
   }
 
-  const {bg: previewBg, border: previewBorder} = getHighlightColorForTags(
+  const {bg: previewBg} = getHighlightColorForTags(
     selectedTagId ? [selectedTagId] : [],
     tags,
   );
+  const selectedTag = tags.find((t) => t.id === selectedTagId);
   const isExiting = !visible && shouldRender;
 
   if (!shouldRender) return null;
@@ -234,91 +233,99 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
       aria-label="Text actions"
       data-highlight-popover="true"
       className={[
-        'fixed z-50 rounded-xl border bg-[var(--color-card)] shadow-xl overflow-hidden',
+        'fixed z-50 overflow-hidden',
+        'rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)]',
+        'shadow-[0_8px_32px_rgba(0,0,0,0.32),0_2px_8px_rgba(0,0,0,0.2)]',
         'transition-all duration-100',
-        isExiting ? 'opacity-0 scale-95' : 'opacity-100 scale-100',
+        isExiting ? 'opacity-0 scale-95 translate-y-0.5' : 'opacity-100 scale-100 translate-y-0',
       ].join(' ')}
-      style={{top: pos.top, left: pos.left}}
-      // Prevent mousedown from collapsing the selection before button clicks fire
+      style={{
+        top: pos.top,
+        left: pos.left,
+        /* Warm top glow — like a lamp above the selection */
+        boxShadow: isExiting
+          ? undefined
+          : '0 8px 32px rgba(0,0,0,0.30), 0 2px 8px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,220,180,0.10)',
+      }}
       onMouseDown={(e) => {
         if ((e.target as HTMLElement).tagName !== 'INPUT') e.preventDefault();
       }}
     >
+      {/* Top accent — warmth */}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-px"
+        style={{background: 'linear-gradient(90deg, transparent, color-mix(in oklch, var(--color-primary) 60%, transparent) 50%, transparent)'}}
+      />
+
       {/* Main action row */}
-      <div className="flex items-center gap-0 px-1 py-1">
-        {/* Tag picker button */}
+      <div className="flex items-center px-1.5 py-1.5 gap-0.5">
+        {/* Tag swatch + picker */}
         <button
           onClick={() => setShowTagMenu((v) => !v)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-muted)] text-xs text-[var(--color-foreground)] transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-[var(--color-accent)] transition-colors group"
           title="Choose tag"
         >
           <span
-            className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0"
+            className="w-3.5 h-3.5 rounded-full ring-1 ring-black/10 flex-shrink-0 transition-transform group-hover:scale-110"
             style={{background: previewBg}}
           />
           <ChevronDown size={10} className="text-[var(--color-muted-foreground)]" />
         </button>
 
-        <div className="w-px h-5 bg-[var(--color-border)] mx-0.5" />
+        <span aria-hidden className="w-px h-4 bg-[var(--color-rule)] mx-0.5" />
 
-        {/* Highlight */}
+        {/* Highlight — primary CTA */}
         <button
-          onClick={() => doHighlight()}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-muted)] text-xs font-medium text-[var(--color-foreground)] transition-colors"
-          title="Highlight (Enter)"
+          onClick={() => void doHighlight()}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:opacity-90 transition-opacity"
+          title="Highlight selection (Enter)"
         >
-          Highlight
-        </button>
-
-        {selectedTagId && (
-          <button
-            onMouseDown={(e) => {
-              e.preventDefault();
-              doHighlight('');
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-muted)] text-xs font-medium text-[var(--color-foreground)] transition-colors"
-            title="Tag & Highlight (Shift+Enter)"
+          <span
+            className="smallcaps text-[11px] tracking-[0.08em]"
           >
-            <span
-              className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0"
-              style={{background: previewBorder}}
-            />
-            Tag &amp; Highlight
-          </button>
-        )}
+            {selectedTag ? `${selectedTag.name}` : 'Highlight'}
+          </span>
+        </button>
 
         {/* Note */}
         <button
           onClick={() => setShowNoteInput((v) => !v)}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-muted)] text-xs text-[var(--color-foreground)] transition-colors"
-          title="Add note"
+          className={[
+            'flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-colors',
+            showNoteInput
+              ? 'bg-[var(--color-accent)] text-[var(--color-foreground)]'
+              : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-accent)]',
+          ].join(' ')}
+          title="Add a note"
         >
-          Note
+          <Pencil size={12} />
         </button>
 
+        {/* Map actions */}
         {topicId && (
           <>
-            <div className="w-px h-5 bg-[var(--color-border)] mx-0.5" />
+            <span aria-hidden className="w-px h-4 bg-[var(--color-rule)] mx-0.5" />
             <button
               onClick={handleCapture}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-muted)] text-xs text-[var(--color-foreground)] transition-colors"
-              title="Quick capture"
+              className="p-1.5 rounded-xl text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-accent)] transition-colors"
+              title="Quick capture to map"
             >
-              <Zap size={11} />
+              <Zap size={12} />
             </button>
             <button
               onClick={handleAddNode}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-muted)] text-xs text-[var(--color-foreground)] transition-colors"
+              className="p-1.5 rounded-xl text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-accent)] transition-colors"
               title="Add as map node"
             >
-              <MapPin size={11} />
+              <MapPin size={12} />
             </button>
             <button
               onClick={handleConnect}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-muted)] text-xs text-[var(--color-foreground)] transition-colors"
+              className="p-1.5 rounded-xl text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-accent)] transition-colors"
               title="Connect to existing node"
             >
-              <Link2 size={11} />
+              <Link2 size={12} />
             </button>
           </>
         )}
@@ -326,7 +333,21 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
 
       {/* Tag dropdown */}
       {showTagMenu && (
-        <div className="border-t border-[var(--color-border)] px-2 py-2 flex flex-wrap gap-1.5">
+        <div className="border-t border-[var(--color-rule)] px-2.5 py-2.5 flex flex-wrap gap-1.5 max-w-[18rem]">
+          <button
+            onClick={() => {
+              setSelectedTagId(null);
+              setShowTagMenu(false);
+            }}
+            className={[
+              'flex items-center gap-1.5 smallcaps text-[10px] tracking-[0.1em] px-2.5 py-1 rounded-full border transition-colors',
+              !selectedTagId
+                ? 'border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--color-primary)]/10'
+                : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]',
+            ].join(' ')}
+          >
+            None
+          </button>
           {tags.map((tag) => (
             <button
               key={tag.id}
@@ -335,30 +356,30 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
                 setShowTagMenu(false);
               }}
               className={[
-                'flex items-center gap-1 text-xs px-2 py-1 rounded-full border transition-colors',
+                'flex items-center gap-1.5 smallcaps text-[10px] tracking-[0.1em] px-2.5 py-1 rounded-full border transition-colors',
                 selectedTagId === tag.id
                   ? 'border-transparent text-[var(--color-foreground)]'
                   : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]',
               ].join(' ')}
               style={
                 selectedTagId === tag.id
-                  ? {background: tag.color + '40', borderColor: tag.color}
+                  ? {background: tag.color + '38', borderColor: tag.color}
                   : {}
               }
             >
-              <span className="w-2 h-2 rounded-full" style={{background: tag.color}} />
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background: tag.color}} />
               {tag.name}
             </button>
           ))}
           {tags.length === 0 && (
-            <span className="text-xs text-[var(--color-muted-foreground)]">No tags yet</span>
+            <span className="text-[11px] italic text-[var(--color-muted-foreground)]">No tags yet</span>
           )}
         </div>
       )}
 
       {/* Note input */}
       {showNoteInput && (
-        <div className="border-t border-[var(--color-border)] px-2 py-2 flex gap-2">
+        <div className="border-t border-[var(--color-rule)] px-2.5 py-2 flex gap-2 items-center min-w-[18rem]">
           <input
             ref={noteInputRef}
             type="text"
@@ -367,7 +388,7 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.stopPropagation();
-                doHighlight(noteText);
+                void doHighlight(noteText);
               }
               if (e.key === 'Escape') {
                 e.stopPropagation();
@@ -375,15 +396,16 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
                 setNoteText('');
               }
             }}
-            placeholder="Add a note… (Enter to save)"
-            className="flex-1 text-xs bg-[var(--color-muted)] rounded px-2 py-1.5 outline-none text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)]"
+            placeholder="Marginal note… ↵ to save"
+            className="flex-1 font-prose text-[13px] bg-[var(--color-vellum)] border border-[var(--color-border)] rounded-lg px-3 py-1.5 outline-none focus:ring-1 ring-[var(--color-primary)]/50 text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] placeholder:italic"
+            style={{fontVariationSettings: '"opsz" 17'}}
           />
         </div>
       )}
 
-      {/* Node picker for Connect-to-Node */}
+      {/* Node picker */}
       {showNodePicker && topicId && (
-        <div className="border-t border-[var(--color-border)] p-2">
+        <div className="border-t border-[var(--color-rule)] p-2">
           <NodePicker
             topicId={topicId}
             onSelect={handleNodeSelected}

@@ -1,13 +1,13 @@
 import {Link, useLocation} from 'react-router';
-import {Sun, Moon, Monitor, BookOpen, Tag, GitBranch, Settings, Search, Library} from 'lucide-react';
+import {Sun, Moon, Monitor, Tag, GitBranch, Settings, Search, Library} from 'lucide-react';
 import {useHandbookStore} from '@/store';
 
 type Theme = 'dark' | 'light' | 'system';
 
 const THEME_ICONS: Record<Theme, React.ReactNode> = {
-  dark: <Moon size={15} />,
-  light: <Sun size={15} />,
-  system: <Monitor size={15} />,
+  dark: <Moon size={14} />,
+  light: <Sun size={14} />,
+  system: <Monitor size={14} />,
 };
 
 export function Navbar({onSearchOpen}: {onSearchOpen: () => void}) {
@@ -21,55 +21,80 @@ export function Navbar({onSearchOpen}: {onSearchOpen: () => void}) {
   }
 
   const navLinks = [
-    {to: '/manage', icon: <Library size={15} />, label: 'Library'},
-    {to: '/annotations', icon: <Tag size={15} />, label: 'Annotations'},
-    {to: '/diagrams', icon: <GitBranch size={15} />, label: 'Diagrams'},
-    {to: '/settings', icon: <Settings size={15} />, label: 'Settings'},
+    {to: '/manage', icon: <Library size={13} />, label: 'Library'},
+    {to: '/annotations', icon: <Tag size={13} />, label: 'Margins'},
+    {to: '/diagrams', icon: <GitBranch size={13} />, label: 'Diagrams'},
+    {to: '/settings', icon: <Settings size={13} />, label: 'Settings'},
   ];
 
   return (
-    <header className="h-12 border-b flex items-center px-4 gap-3 shrink-0 bg-[var(--color-card)]">
+    <header className="relative h-14 shrink-0 bg-[var(--color-card)] flex items-center px-5 gap-4 border-b border-[var(--color-rule)]">
+      {/* Top hairline ornament — like a book's headband */}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-primary)]/45 to-transparent"
+      />
+
       <Link
         to="/"
-        className="flex items-center gap-2 font-semibold text-sm mr-2 text-[var(--color-foreground)] no-underline"
+        className="group flex items-baseline gap-2 mr-1 no-underline select-none"
       >
-        <BookOpen size={16} />
-        LearnIt
+        <span
+          aria-hidden
+          className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] translate-y-[-1px] transition-transform group-hover:scale-125"
+        />
+        <span
+          className="font-display text-[1.35rem] leading-none text-[var(--color-ink)] italic"
+          style={{fontVariationSettings: '"opsz" 96, "SOFT" 80, "wght" 460'}}
+        >
+          LearnIt
+        </span>
       </Link>
 
       <div className="flex-1" />
 
       <button
         onClick={onSearchOpen}
-        className="flex items-center gap-2 text-xs text-[var(--color-muted-foreground)] bg-[var(--color-muted)] hover:bg-[var(--color-accent)] border rounded px-2.5 py-1.5 transition-colors"
+        className="group flex items-center gap-2 text-[11px] text-[var(--color-muted-foreground)] bg-[var(--color-vellum)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)] border border-[var(--color-border)] rounded-md px-3 py-1.5 transition-colors"
         aria-label="Open search"
       >
-        <Search size={13} />
-        <span className="hidden sm:inline">Search</span>
-        <kbd className="hidden sm:inline text-[10px] opacity-60">⌘K</kbd>
+        <Search size={12} className="opacity-70 group-hover:opacity-100" />
+        <span className="hidden sm:inline smallcaps tracking-[0.08em]">Search</span>
+        <kbd className="hidden sm:inline font-mono text-[10px] opacity-55 ml-1">⌘K</kbd>
       </button>
 
-      <nav className="flex items-center gap-1">
-        {navLinks.map(({to, icon, label}) => (
-          <Link
-            key={to}
-            to={to}
-            className={[
-              'flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs transition-colors no-underline',
-              location.pathname.startsWith(to)
-                ? 'bg-[var(--color-accent)] text-[var(--color-accent-foreground)]'
-                : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-accent)]',
-            ].join(' ')}
-          >
-            {icon}
-            <span className="hidden md:inline">{label}</span>
-          </Link>
-        ))}
+      <nav className="flex items-center gap-0.5">
+        {navLinks.map(({to, icon, label}) => {
+          const active = location.pathname.startsWith(to);
+          return (
+            <Link
+              key={to}
+              to={to}
+              className={[
+                'relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] smallcaps tracking-[0.08em] transition-colors no-underline',
+                active
+                  ? 'text-[var(--color-primary)]'
+                  : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]',
+              ].join(' ')}
+            >
+              {icon}
+              <span className="hidden md:inline">{label}</span>
+              {active && (
+                <span
+                  aria-hidden
+                  className="absolute left-2.5 right-2.5 -bottom-[3px] h-px bg-[var(--color-primary)]"
+                />
+              )}
+            </Link>
+          );
+        })}
       </nav>
+
+      <span aria-hidden className="hidden md:block w-px h-5 bg-[var(--color-border)] mx-1" />
 
       <button
         onClick={cycleTheme}
-        className="p-1.5 rounded text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-accent)] transition-colors"
+        className="p-1.5 rounded-md text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-accent)] transition-colors"
         aria-label={`Theme: ${theme}`}
         title={`Theme: ${theme}`}
       >

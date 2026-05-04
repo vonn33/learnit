@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {type Tag} from '@/store/tagStore';
 import {hexToRgba} from '@/lib/highlights';
-import {X, Check} from 'lucide-react';
+import {X, Check, Trash2, Unlink} from 'lucide-react';
 import {useAnnotationStore} from '@/store/annotationStore';
 import {useMapStore} from '@/store/mapStore';
 import {NodePicker} from '@/components/map/NodePicker';
@@ -60,7 +60,7 @@ export function NotePanel({annotationId, topicId, anchorRect: _anchorRect, tags,
   async function save() {
     await updateAnnotation(annotationId, {note, connectionUrl});
     setSavedAt(Date.now());
-    setTimeout(() => setSavedAt(0), 1500);
+    setTimeout(() => setSavedAt(0), 1800);
   }
 
   async function handleConnect(nodeId: string) {
@@ -96,36 +96,62 @@ export function NotePanel({annotationId, topicId, anchorRect: _anchorRect, tags,
   if (!annotation) return null;
 
   const appliedTags = tags.filter((t) => annotation.tagIds.includes(t.id));
+  const primaryTagColor = appliedTags[0]?.color;
+
+  const dateStr = new Date(annotation.createdAt).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 
   return (
     <div
       data-note-panel="true"
-      className="fixed right-4 top-16 z-50 w-80 rounded-xl border bg-[var(--color-card)] shadow-2xl flex flex-col overflow-hidden"
+      className="fixed right-4 top-16 z-50 w-80 rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)] shadow-[0_8px_40px_rgba(0,0,0,0.28),0_2px_8px_rgba(0,0,0,0.18)] flex flex-col overflow-hidden"
+      style={{
+        boxShadow: '0 8px 40px rgba(0,0,0,0.26), 0 2px 8px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,220,180,0.08)',
+      }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b">
+      {/* Top accent */}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-px"
+        style={{background: 'linear-gradient(90deg, transparent, color-mix(in oklch, var(--color-primary) 60%, transparent) 50%, transparent)'}}
+      />
+      {primaryTagColor && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-6 bottom-6 w-[3px] rounded-r"
+          style={{background: primaryTagColor}}
+        />
+      )}
+
+      {/* Header: tags + close */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex flex-wrap gap-1.5">
           {appliedTags.length > 0 ? (
             appliedTags.map((t) => (
               <span
                 key={t.id}
-                className="text-xs px-2 py-0.5 rounded-full border"
+                className="inline-flex items-center gap-1 smallcaps text-[10px] tracking-[0.1em] px-2 py-0.5 rounded-full"
                 style={{
-                  background: hexToRgba(t.color, 0.15),
-                  borderColor: t.color,
+                  background: hexToRgba(t.color, 0.18),
                   color: t.color,
                 }}
               >
+                <span className="w-1.5 h-1.5 rounded-full" style={{background: t.color}} />
                 {t.name}
               </span>
             ))
           ) : (
-            <span className="text-xs text-[var(--color-muted-foreground)]">Untagged</span>
+            <span className="smallcaps text-[10px] tracking-[0.1em] text-[var(--color-muted-foreground)] opacity-70">
+              Untagged
+            </span>
           )}
         </div>
         <button
           onClick={onClose}
-          className="p-1 rounded text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-accent)] transition-colors shrink-0 ml-2"
+          className="p-1 rounded-md text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-accent)] transition-colors shrink-0 ml-2"
           aria-label="Close"
         >
           <X size={14} />
@@ -133,103 +159,117 @@ export function NotePanel({annotationId, topicId, anchorRect: _anchorRect, tags,
       </div>
 
       {/* Quote */}
-      <blockquote className="mx-4 my-3 pl-3 border-l-2 border-[var(--color-border)] text-xs text-[var(--color-muted-foreground)] italic leading-relaxed">
-        {annotation.text.length > 200
-          ? annotation.text.slice(0, 200) + '…'
+      <blockquote
+        className="font-prose italic text-[13.5px] leading-[1.6] text-[var(--color-foreground)] mx-4 mb-3 pl-3 border-l-2"
+        style={{
+          fontVariationSettings: '"opsz" 16, "wght" 400',
+          borderColor: primaryTagColor ? primaryTagColor + 'aa' : 'var(--color-primary)',
+        }}
+      >
+        {annotation.text.length > 220
+          ? annotation.text.slice(0, 220) + '…'
           : annotation.text}
       </blockquote>
 
-      {/* Note */}
-      <div className="px-4 pb-2">
-        <label className="block text-[10px] uppercase tracking-wider text-[var(--color-muted-foreground)] font-semibold mb-1.5">
-          Note
-        </label>
-        <textarea
-          ref={textareaRef}
-          className="w-full text-sm bg-[var(--color-muted)] rounded px-3 py-2 resize-none outline-none focus:ring-1 ring-[var(--color-ring)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] transition-all"
-          value={note}
-          onChange={(e) => {
-            setNote(e.target.value);
-            e.target.style.height = 'auto';
-            e.target.style.height = e.target.scrollHeight + 'px';
-          }}
-          onBlur={save}
-          placeholder="Add a note, insight, or connection…"
-          rows={3}
-        />
-        {savedAt > 0 && (
-          <span className="flex items-center gap-1 text-[10px] text-green-500 mt-1">
-            <Check size={10} /> Saved
-          </span>
-        )}
-      </div>
-
-      {/* Map Node Connection */}
-      {topicId && (
-        <div className="px-4 pb-3">
-          <label className="block text-[10px] uppercase tracking-wider text-[var(--color-muted-foreground)] font-semibold mb-1.5">
-            Map Node
+      <div className="px-4 pb-0 flex flex-col gap-3">
+        {/* Note textarea */}
+        <div>
+          <label className="block smallcaps text-[10px] tracking-[0.14em] text-[var(--color-muted-foreground)] mb-1.5">
+            Marginal Note
           </label>
-          {mapNodeId && connectedNodeLabel ? (
-            <div className="flex items-center gap-2">
-              <span className="flex-1 text-xs text-[var(--color-foreground)] bg-[var(--color-muted)] rounded px-3 py-2 truncate">
-                {connectedNodeLabel}
-              </span>
-              <button
-                onClick={handleDisconnect}
-                className="p-1 rounded text-[var(--color-muted-foreground)] hover:text-destructive transition-colors shrink-0"
-                aria-label="Disconnect node"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          ) : showNodePicker ? (
-            <NodePicker
-              topicId={topicId}
-              onSelect={handleConnect}
-              onClose={() => setShowNodePicker(false)}
-            />
-          ) : (
-            <button
-              onClick={() => setShowNodePicker(true)}
-              className="w-full text-left text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] bg-[var(--color-muted)] rounded px-3 py-2 transition-colors"
-            >
-              Connect to map node →
-            </button>
+          <textarea
+            ref={textareaRef}
+            className="w-full font-prose text-[13px] bg-[var(--color-vellum)] border border-[var(--color-border)] rounded-lg px-3 py-2 resize-none outline-none focus:ring-1 ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)]/40 text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] placeholder:italic transition-colors"
+            value={note}
+            onChange={(e) => {
+              setNote(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = e.target.scrollHeight + 'px';
+            }}
+            onBlur={save}
+            placeholder="Add an insight or connection…"
+            rows={3}
+            style={{fontVariationSettings: '"opsz" 17'}}
+          />
+          {savedAt > 0 && (
+            <span className="flex items-center gap-1 smallcaps text-[10px] tracking-[0.08em] text-[var(--color-primary)] mt-1 opacity-80">
+              <Check size={10} /> Saved
+            </span>
           )}
         </div>
-      )}
 
-      {/* Link */}
-      <div className="px-4 pb-3">
-        <label className="block text-[10px] uppercase tracking-wider text-[var(--color-muted-foreground)] font-semibold mb-1.5">
-          Link to (optional)
-        </label>
-        <input
-          type="text"
-          className="w-full text-xs bg-[var(--color-muted)] rounded px-3 py-2 outline-none focus:ring-1 ring-[var(--color-ring)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)]"
-          value={connectionUrl}
-          onChange={(e) => setConnectionUrl(e.target.value)}
-          onBlur={save}
-          placeholder="/docs/path or https://..."
-        />
+        {/* Map Node Connection */}
+        {topicId && (
+          <div>
+            <label className="block smallcaps text-[10px] tracking-[0.14em] text-[var(--color-muted-foreground)] mb-1.5">
+              Map Node
+            </label>
+            {mapNodeId && connectedNodeLabel ? (
+              <div className="flex items-center gap-2">
+                <span className="flex-1 text-[12px] font-prose text-[var(--color-foreground)] bg-[var(--color-vellum)] border border-[var(--color-border)] rounded-lg px-3 py-1.5 truncate">
+                  {connectedNodeLabel}
+                </span>
+                <button
+                  onClick={handleDisconnect}
+                  className="p-1.5 rounded-lg text-[var(--color-muted-foreground)] hover:text-[var(--color-destructive)] hover:bg-[var(--color-accent)] transition-colors shrink-0"
+                  aria-label="Disconnect node"
+                >
+                  <Unlink size={13} />
+                </button>
+              </div>
+            ) : showNodePicker ? (
+              <NodePicker
+                topicId={topicId}
+                onSelect={handleConnect}
+                onClose={() => setShowNodePicker(false)}
+              />
+            ) : (
+              <button
+                onClick={() => setShowNodePicker(true)}
+                className="w-full text-left smallcaps text-[11px] tracking-[0.08em] text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] bg-[var(--color-vellum)] border border-dashed border-[var(--color-rule)] rounded-lg px-3 py-2 transition-colors"
+              >
+                Connect to map node →
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Link */}
+        <div>
+          <label className="block smallcaps text-[10px] tracking-[0.14em] text-[var(--color-muted-foreground)] mb-1.5">
+            Link (optional)
+          </label>
+          <input
+            type="text"
+            className="w-full text-[12px] bg-[var(--color-vellum)] border border-[var(--color-border)] rounded-lg px-3 py-1.5 outline-none focus:ring-1 ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)]/40 text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] transition-colors font-mono"
+            value={connectionUrl}
+            onChange={(e) => setConnectionUrl(e.target.value)}
+            onBlur={save}
+            placeholder="/docs/... or https://..."
+            style={{fontVariationSettings: '"MONO" 1'}}
+          />
+        </div>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-4 py-3 border-t bg-[var(--color-background)]">
-        <span className="text-[10px] text-[var(--color-muted-foreground)]">
-          {new Date(annotation.createdAt).toLocaleDateString()}
+      <div className="flex items-center justify-between px-4 py-3 mt-2 border-t border-[var(--color-rule)] bg-[var(--color-background)]/40">
+        <span
+          className="font-mono text-[10px] text-[var(--color-muted-foreground)] opacity-60"
+          style={{fontVariationSettings: '"MONO" 1'}}
+        >
+          {dateStr}
         </span>
         <button
           onClick={handleDeleteClick}
           className={[
-            'text-xs px-3 py-1.5 rounded transition-colors',
+            'flex items-center gap-1.5 smallcaps text-[10px] tracking-[0.08em] px-2.5 py-1.5 rounded-md transition-colors',
             deleteConfirm
-              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-              : 'text-[var(--color-muted-foreground)] hover:text-red-400 border border-transparent hover:border-red-500/30',
+              ? 'bg-[var(--color-destructive)]/15 text-[var(--color-destructive)] border border-[var(--color-destructive)]/30'
+              : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-destructive)] border border-transparent hover:border-[var(--color-destructive)]/25',
           ].join(' ')}
         >
-          {deleteConfirm ? 'Confirm delete?' : 'Delete'}
+          <Trash2 size={11} />
+          {deleteConfirm ? 'Confirm?' : 'Delete'}
         </button>
       </div>
     </div>

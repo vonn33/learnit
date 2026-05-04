@@ -3,45 +3,67 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-background: oklch(0.145 0 0);
-  --color-foreground: oklch(0.985 0 0);
-  --color-card: oklch(0.205 0 0);
-  --color-card-foreground: oklch(0.985 0 0);
-  --color-muted: oklch(0.269 0 0);
-  --color-muted-foreground: oklch(0.708 0 0);
-  --color-border: oklch(0.269 0 0);
-  --color-accent: oklch(0.269 0 0);
-  --color-accent-foreground: oklch(0.985 0 0);
-  --color-primary: oklch(0.985 0 0);
-  --color-primary-foreground: oklch(0.205 0 0);
-  --color-destructive: oklch(0.704 0.191 22.216);
-  --color-ring: oklch(0.556 0 0);
+  /* ───────── Type families ───────── */
+  --font-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
+  --font-prose: "Newsreader", "Iowan Old Style", "Georgia", serif;
+  --font-sans: "Recursive", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "Recursive Mono", "Recursive", ui-monospace, "JetBrains Mono", monospace;
+
+  /* ───────── Dark study (default) — leather, brass, candlelight ───────── */
+  --color-background: oklch(0.165 0.012 35);    /* old leather */
+  --color-foreground: oklch(0.92 0.018 80);     /* parchment */
+  --color-card: oklch(0.215 0.014 35);          /* warmer leather */
+  --color-card-foreground: oklch(0.92 0.018 80);
+  --color-muted: oklch(0.275 0.014 35);
+  --color-muted-foreground: oklch(0.7 0.018 75); /* faded paper */
+  --color-border: oklch(0.32 0.018 38);          /* worn edge */
+  --color-accent: oklch(0.27 0.018 38);
+  --color-accent-foreground: oklch(0.94 0.018 80);
+  --color-primary: oklch(0.62 0.14 255);          /* slate-indigo */
+  --color-primary-foreground: oklch(0.97 0.008 255);
+  --color-destructive: oklch(0.7 0.19 22);
+  --color-ring: oklch(0.56 0.12 255);
+
+  /* Warm typographic accents */
+  --color-ink: oklch(0.94 0.02 80);              /* full foreground for emphasis */
+  --color-vellum: oklch(0.245 0.014 35);         /* slightly raised surface */
+  --color-rule: oklch(0.42 0.02 38);             /* hairline divider */
+  --color-gilt: oklch(0.78 0.13 75);             /* brass / gilt */
 
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
+
+  /* Paper grain (SVG noise, base64) */
+  --paper-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
 :root {
   color-scheme: dark;
 }
 
+/* ───────── Light paper — cream, ink, oxblood ───────── */
 html.light {
   color-scheme: light;
-  --color-background: oklch(0.985 0 0);
-  --color-foreground: oklch(0.145 0 0);
-  --color-card: oklch(0.97 0 0);
-  --color-card-foreground: oklch(0.145 0 0);
-  --color-muted: oklch(0.922 0 0);
-  --color-muted-foreground: oklch(0.556 0 0);
-  --color-border: oklch(0.898 0 0);
-  --color-accent: oklch(0.922 0 0);
-  --color-accent-foreground: oklch(0.145 0 0);
-  --color-primary: oklch(0.205 0 0);
-  --color-primary-foreground: oklch(0.985 0 0);
-  --color-destructive: oklch(0.577 0.245 27.325);
-  --color-ring: oklch(0.708 0 0);
+  --color-background: oklch(0.965 0.012 80);     /* warm cream paper */
+  --color-foreground: oklch(0.22 0.022 245);     /* cool ink */
+  --color-card: oklch(0.985 0.008 80);           /* clean parchment */
+  --color-card-foreground: oklch(0.22 0.022 245);
+  --color-muted: oklch(0.925 0.014 75);          /* sepia field */
+  --color-muted-foreground: oklch(0.45 0.025 250); /* faded ink */
+  --color-border: oklch(0.86 0.018 70);          /* pencil line */
+  --color-accent: oklch(0.92 0.016 70);          /* vellum band */
+  --color-accent-foreground: oklch(0.22 0.022 245);
+  --color-primary: oklch(0.44 0.16 255);          /* slate-indigo, light mode */
+  --color-primary-foreground: oklch(0.98 0.006 255);
+  --color-destructive: oklch(0.55 0.22 27);
+  --color-ring: oklch(0.44 0.16 255);
+
+  --color-ink: oklch(0.18 0.022 250);
+  --color-vellum: oklch(0.945 0.014 78);
+  --color-rule: oklch(0.78 0.022 70);
+  --color-gilt: oklch(0.55 0.13 65);
 }
 
 * {
@@ -49,140 +71,77 @@ html.light {
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11", "calt";
+  font-variation-settings: "MONO" 0, "CASL" 0.15, "wght" 420, "slnt" 0, "CRSV" 0.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle paper texture across the whole app — sits above bg, below content */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: var(--paper-grain);
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  z-index: 0;
+}
+
+html.light body::before {
+  opacity: 0.09;
+  mix-blend-mode: multiply;
 }
 
 #root {
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
-/* Highlight marks */
+/* ───────── Display utility (use for brand + page titles) ───────── */
+.font-display {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 96, "SOFT" 30, "wght" 480;
+  font-feature-settings: "ss01", "ss02", "dlig", "liga";
+  letter-spacing: -0.022em;
+}
+
+.font-prose {
+  font-family: var(--font-prose);
+  font-variation-settings: "opsz" 16;
+}
+
+/* Selection — oxblood ink wash */
+::selection {
+  background: color-mix(in oklch, var(--color-primary) 32%, transparent);
+  color: var(--color-ink);
+}
+
+/* ───────── Highlight marks ───────── */
 mark.handbook-highlight {
-  border-radius: 2px;
+  border-radius: 1px;
   cursor: pointer;
   padding: 0 1px;
   background-color: transparent;
+  transition: filter 120ms ease;
 }
 
 mark.handbook-highlight:hover {
-  filter: brightness(1.2);
-}
-
-/* Prose styles for MDX content */
-.prose {
-  color: var(--color-foreground);
-  max-width: 72ch;
-  font-size: 1rem;
-  line-height: 1.75;
-}
-
-.prose h1, .prose h2, .prose h3, .prose h4 {
-  font-weight: 600;
-  line-height: 1.3;
-  margin-top: 2rem;
-  margin-bottom: 0.75rem;
-  color: var(--color-foreground);
-}
-
-.prose h1 { font-size: 1.875rem; margin-top: 0; }
-.prose h2 { font-size: 1.5rem; }
-.prose h3 { font-size: 1.25rem; }
-.prose h4 { font-size: 1.1rem; }
-
-.prose p { margin-bottom: 1.25rem; }
-
-.prose ul, .prose ol {
-  margin-bottom: 1.25rem;
-  padding-left: 1.5rem;
-}
-
-.prose li { margin-bottom: 0.4rem; }
-.prose ul li { list-style-type: disc; }
-.prose ol li { list-style-type: decimal; }
-
-.prose blockquote {
-  border-left: 3px solid var(--color-border);
-  padding-left: 1rem;
-  color: var(--color-muted-foreground);
-  margin: 1.5rem 0;
-  font-style: italic;
-}
-
-.prose code {
-  background: var(--color-muted);
-  padding: 0.15em 0.35em;
-  border-radius: 3px;
-  font-size: 0.875em;
-  font-family: ui-monospace, monospace;
-}
-
-.prose pre {
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 1rem 1.25rem;
-  overflow-x: auto;
-  margin-bottom: 1.25rem;
-}
-
-.prose pre code {
-  background: transparent;
-  padding: 0;
-  font-size: 0.875rem;
-}
-
-.prose a {
-  color: oklch(0.65 0.15 250);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.prose a:hover { color: oklch(0.75 0.15 250); }
-
-.prose table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 1.25rem;
-}
-
-.prose th {
-  text-align: left;
-  padding: 0.5rem 0.75rem;
-  background: var(--color-muted);
-  font-weight: 600;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.prose td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.prose hr {
-  border: none;
-  border-top: 1px solid var(--color-border);
-  margin: 2rem 0;
-}
-
-.prose strong { font-weight: 600; }
-.prose em { font-style: italic; }
-
-/* ── Annotation rendering ── */
-mark.handbook-highlight {
-  cursor: pointer;
-  border-radius: 2px;
-  padding: 0 1px;
+  filter: brightness(1.18) saturate(1.1);
 }
 
 mark.handbook-highlight.ring-2 {
-  outline: 2px solid var(--color-primary);
+  outline: 1.5px solid var(--color-primary);
   outline-offset: 1px;
 }
 
@@ -204,3 +163,273 @@ span.handbook-note-dot {
 .handbook-highlight-pulse {
   animation: annotation-pulse 0.6s ease-in-out 2;
 }
+
+/* ───────── Prose — long-form reading optimized ───────── */
+.prose {
+  color: var(--color-foreground);
+  font-family: var(--font-prose);
+  font-variation-settings: "opsz" 17;
+  font-size: 1.0625rem;     /* 17px — better for serifs */
+  line-height: 1.7;
+  max-width: 68ch;
+  hanging-punctuation: first last;
+  text-wrap: pretty;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  font-family: var(--font-display);
+  font-feature-settings: "ss01", "dlig", "liga";
+  color: var(--color-ink);
+  margin-top: 2.25rem;
+  margin-bottom: 0.65rem;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+}
+
+.prose h1 {
+  font-size: 2.5rem;
+  margin-top: 0;
+  font-variation-settings: "opsz" 144, "SOFT" 50, "wght" 460;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.prose h2 {
+  font-size: 1.75rem;
+  font-variation-settings: "opsz" 72, "SOFT" 40, "wght" 480;
+  line-height: 1.15;
+  margin-top: 2.75rem;
+}
+
+.prose h3 {
+  font-size: 1.32rem;
+  font-variation-settings: "opsz" 36, "wght" 520;
+  line-height: 1.25;
+}
+
+.prose h4 {
+  font-size: 1.08rem;
+  font-variation-settings: "opsz" 24, "wght" 600;
+  line-height: 1.3;
+}
+
+.prose p {
+  margin-bottom: 1.15rem;
+  orphans: 3;
+  widows: 3;
+}
+
+/* Drop-cap on first paragraph after H1 */
+.prose h1 + p::first-letter {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 144, "SOFT" 100, "wght" 520;
+  font-size: 4.2em;
+  line-height: 0.85;
+  float: left;
+  padding: 0.42rem 0.5rem 0 0;
+  color: var(--color-primary);
+  letter-spacing: -0.04em;
+}
+
+.prose ul, .prose ol {
+  margin-bottom: 1.25rem;
+  padding-left: 1.5rem;
+}
+
+.prose li { margin-bottom: 0.4rem; }
+.prose ul li { list-style-type: disc; }
+.prose ol li { list-style-type: decimal; }
+.prose ul li::marker { color: var(--color-primary); }
+.prose ol li::marker { color: var(--color-muted-foreground); font-variant-numeric: oldstyle-nums; }
+
+.prose blockquote {
+  border-left: 2px solid var(--color-primary);
+  padding: 0.1rem 0 0.1rem 1.25rem;
+  color: var(--color-muted-foreground);
+  margin: 1.75rem 0;
+  font-style: italic;
+  font-variation-settings: "opsz" 24, "wght" 360;
+  font-size: 1.08em;
+}
+
+.prose code {
+  background: var(--color-muted);
+  padding: 0.12em 0.38em;
+  border-radius: 3px;
+  font-size: 0.86em;
+  font-family: var(--font-mono);
+  font-variation-settings: "MONO" 1, "CASL" 0;
+  color: var(--color-ink);
+}
+
+.prose pre {
+  background: var(--color-vellum);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 0 0 var(--color-rule) inset;
+}
+
+.prose pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.prose a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklch, var(--color-primary) 50%, transparent);
+  transition: color 120ms ease, text-decoration-color 120ms ease;
+}
+
+.prose a:hover {
+  text-decoration-color: var(--color-primary);
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+  font-size: 0.95em;
+  font-variant-numeric: tabular-nums oldstyle-nums;
+}
+
+.prose th {
+  text-align: left;
+  padding: 0.55rem 0.8rem;
+  background: var(--color-vellum);
+  font-family: var(--font-sans);
+  font-variation-settings: "wght" 600;
+  font-size: 0.8em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.prose td {
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.prose hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-rule) 20%,
+    var(--color-rule) 80%,
+    transparent
+  );
+  margin: 2.5rem auto;
+  width: 60%;
+}
+
+.prose strong {
+  font-variation-settings: "opsz" 17, "wght" 620;
+  color: var(--color-ink);
+}
+
+.prose em {
+  font-style: italic;
+  font-variation-settings: "opsz" 17;
+}
+
+/* Pull quote — opt-in via class on a blockquote */
+.prose blockquote.pull {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 96, "SOFT" 80, "wght" 380;
+  font-size: 1.5rem;
+  font-style: normal;
+  line-height: 1.25;
+  border: none;
+  padding: 0;
+  margin: 2rem 0;
+  color: var(--color-ink);
+  text-align: center;
+  letter-spacing: -0.015em;
+}
+.prose blockquote.pull::before {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 1px;
+  background: var(--color-primary);
+  margin: 0 auto 1rem;
+}
+.prose blockquote.pull::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 1px;
+  background: var(--color-primary);
+  margin: 1rem auto 0;
+}
+
+/* ───────── Decorative small caps utility ───────── */
+.smallcaps {
+  font-feature-settings: "smcp", "c2sc";
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
+/* Hairline divider as text ornament */
+.rule-flourish {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-muted-foreground);
+}
+.rule-flourish::before,
+.rule-flourish::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-rule);
+}
+
+/* Subtle motion: page-load reveal */
+@keyframes ink-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ink-in {
+  animation: ink-fade 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Stagger helpers for lists */
+.ink-stagger > * { animation: ink-fade 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.ink-stagger > *:nth-child(1) { animation-delay: 40ms; }
+.ink-stagger > *:nth-child(2) { animation-delay: 90ms; }
+.ink-stagger > *:nth-child(3) { animation-delay: 140ms; }
+.ink-stagger > *:nth-child(4) { animation-delay: 190ms; }
+.ink-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.ink-stagger > *:nth-child(6) { animation-delay: 290ms; }
+.ink-stagger > *:nth-child(7) { animation-delay: 340ms; }
+.ink-stagger > *:nth-child(8) { animation-delay: 390ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-in, .ink-stagger > * { animation: none; }
+}
+
+/* Custom scrollbar — slim, ink-stained */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-rule) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--color-rule);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); background-clip: padding-box; }

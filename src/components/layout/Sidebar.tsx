@@ -1,6 +1,6 @@
 import {useMemo, useState} from 'react';
 import {NavLink, Link} from 'react-router';
-import {ChevronDown, ChevronRight, ChevronLeft, Upload, Settings2} from 'lucide-react';
+import {ChevronDown, ChevronRight, ChevronLeft, Upload, Settings2, BookMarked} from 'lucide-react';
 import {useWorkspaceStore} from '@/store/workspaceStore';
 import {useDocStore, type Doc} from '@/store/docStore';
 import {ImportWizard} from '@/components/import/ImportWizard';
@@ -32,27 +32,41 @@ function SectionItem({
     <div>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
+        className="w-full flex items-center gap-1.5 px-3 py-1.5 smallcaps text-[10px] tracking-[0.1em] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
       >
-        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        <ChevronRight
+          size={11}
+          className={`transition-transform duration-150 ${open ? 'rotate-90' : ''}`}
+        />
         {humanize(sectionKey)}
+        <span className="ml-auto font-mono text-[10px] opacity-50">{docs.length}</span>
       </button>
       {open && (
-        <div className="ml-3 border-l pl-2 flex flex-col gap-0.5">
+        <div className="ml-[14px] border-l border-[var(--color-rule)] pl-2 flex flex-col gap-px py-1">
           {docs.map((doc) => (
             <NavLink
               key={doc.id}
               to={docPath(projectKey, sectionKey, doc.slug)}
               className={({isActive}) =>
                 [
-                  'block px-2 py-1.5 text-xs rounded truncate transition-colors no-underline',
+                  'group relative block px-2 py-1.5 text-[12.5px] rounded-md truncate transition-colors no-underline leading-snug',
                   isActive
-                    ? 'bg-[var(--color-accent)] text-[var(--color-accent-foreground)] font-medium'
-                    : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-accent)]',
+                    ? 'text-[var(--color-ink)] bg-[var(--color-accent)]'
+                    : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-accent)]/60',
                 ].join(' ')
               }
             >
-              {doc.title}
+              {({isActive}) => (
+                <>
+                  {isActive && (
+                    <span
+                      aria-hidden
+                      className="absolute -left-[10px] top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-[var(--color-primary)]"
+                    />
+                  )}
+                  {doc.title}
+                </>
+              )}
             </NavLink>
           ))}
         </div>
@@ -71,16 +85,20 @@ function ProjectItem({
   const [open, setOpen] = useState(true);
   const sectionEntries = Object.entries(sections);
   return (
-    <div className="mb-2">
+    <div className="mb-3">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm font-semibold text-[var(--color-foreground)] hover:bg-[var(--color-accent)] rounded transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-1.5 font-display italic text-[15px] text-[var(--color-ink)] hover:text-[var(--color-primary)] transition-colors"
+        style={{fontVariationSettings: '"opsz" 36, "SOFT" 70, "wght" 480'}}
       >
-        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <ChevronDown
+          size={12}
+          className={`text-[var(--color-muted-foreground)] transition-transform duration-150 ${open ? '' : '-rotate-90'}`}
+        />
         {humanize(projectKey)}
       </button>
       {open && (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0.5 mt-0.5">
           {sectionEntries.map(([sectionKey, docs], i) => (
             <SectionItem
               key={sectionKey}
@@ -112,50 +130,78 @@ export function Sidebar({className = ''}: {className?: string}) {
     return out;
   }, [docs]);
 
+  const projectCount = Object.keys(grouped).length;
+
   return (
     <aside
       className={[
-        'shrink-0 overflow-y-auto border-r bg-[var(--color-card)] py-3 flex flex-col transition-all duration-200',
+        'shrink-0 overflow-y-auto border-r border-[var(--color-rule)] bg-[var(--color-card)] py-3 flex flex-col transition-all duration-200 relative',
         collapsed ? 'w-12' : 'w-64',
         className,
       ].join(' ')}
     >
       {!collapsed && (
         <div className="flex-1">
-          <div className="px-2">
+          <div className="px-2 mb-3">
             <button
               onClick={() => setImportOpen(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded mb-3"
+              className="group w-full flex items-center gap-2 px-3 py-2 text-[12.5px] rounded-md bg-[var(--color-vellum)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/60 hover:bg-[var(--color-accent)] text-[var(--color-foreground)] transition-colors"
             >
-              <Upload className="size-4" /> Import .md
+              <Upload className="size-3.5 text-[var(--color-primary)]" />
+              <span>Import</span>
+              <span className="ml-auto font-mono text-[10px] text-[var(--color-muted-foreground)]">.md</span>
             </button>
             <Link
               to="/manage"
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--color-accent)] rounded mb-3"
+              className="w-full flex items-center gap-2 px-3 py-1.5 mt-1 text-[12px] rounded-md text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-accent)]/60 transition-colors no-underline"
             >
-              <Settings2 className="size-4" /> Manage content
+              <Settings2 className="size-3.5 opacity-70" />
+              <span>Manage shelves</span>
             </Link>
           </div>
+
+          <div className="px-3 my-3 flex items-center gap-2">
+            <span aria-hidden className="flex-1 h-px bg-[var(--color-rule)]" />
+            <BookMarked size={11} className="text-[var(--color-muted-foreground)] opacity-60" />
+            <span aria-hidden className="flex-1 h-px bg-[var(--color-rule)]" />
+          </div>
+
           <ImportWizard open={importOpen} onClose={() => setImportOpen(false)} />
-          {Object.entries(grouped).map(([projectKey, sections]) => (
-            <ProjectItem key={projectKey} projectKey={projectKey} sections={sections} />
-          ))}
-          {Object.keys(grouped).length === 0 && (
-            <p className="px-3 py-4 text-xs text-[var(--color-muted-foreground)]">
-              No documents yet. Click "Import .md" to add your first one.
-            </p>
+
+          <div className="px-2">
+            {Object.entries(grouped).map(([projectKey, sections]) => (
+              <ProjectItem key={projectKey} projectKey={projectKey} sections={sections} />
+            ))}
+          </div>
+
+          {projectCount === 0 && (
+            <div className="px-4 py-6 mx-2 rounded-lg border border-dashed border-[var(--color-rule)] text-center">
+              <p className="font-display italic text-sm text-[var(--color-foreground)] mb-1.5"
+                style={{fontVariationSettings: '"opsz" 24, "SOFT" 70, "wght" 420'}}
+              >
+                Empty shelves.
+              </p>
+              <p className="text-[11px] text-[var(--color-muted-foreground)] leading-relaxed">
+                Import a <span className="font-mono text-[10px]">.md</span> file to begin your library.
+              </p>
+            </div>
           )}
         </div>
       )}
 
-      <div className={`mt-auto pt-2 border-t border-[var(--color-border)] flex ${collapsed ? 'justify-center' : 'justify-end px-2'}`}>
+      <div className={`mt-auto pt-2 border-t border-[var(--color-rule)] flex ${collapsed ? 'justify-center' : 'justify-between items-center px-3'}`}>
+        {!collapsed && (
+          <span className="smallcaps text-[10px] tracking-[0.1em] text-[var(--color-muted-foreground)] opacity-70">
+            {projectCount} {projectCount === 1 ? 'shelf' : 'shelves'}
+          </span>
+        )}
         <button
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           onClick={() => setSidebarCollapsed(!collapsed)}
-          className="p-1.5 rounded hover:bg-[var(--color-accent)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
+          className="p-1.5 rounded-md hover:bg-[var(--color-accent)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       </div>
     </aside>
