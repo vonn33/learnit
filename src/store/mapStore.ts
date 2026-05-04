@@ -152,14 +152,16 @@ export const useMapStore = create<MapStore>((set, get) => ({
       .select()
       .single();
 
+    if (error) {
+      throw new Error(`Failed to insert map node: ${error.message}`);
+    }
+
     let mapNode: MapNode;
-    if (error || !data) {
-      // Fallback: still add to local state with a synthesized id so the UI
-      // doesn't desync if Supabase is unreachable in the test/mock path.
+    if (!data) {
+      // Test/mock path returns no data — synthesize an id locally.
       mapNode = { ...node, id: uuid() };
     } else {
       mapNode = rowToNode(data as MapNodeRow);
-      // Preserve domain-only fields the DB doesn't store
       if (node.linkedMapId) mapNode.linkedMapId = node.linkedMapId;
     }
 
@@ -247,12 +249,15 @@ export const useMapStore = create<MapStore>((set, get) => ({
       .select()
       .single();
 
+    if (error) {
+      throw new Error(`Failed to insert map edge: ${error.message}`);
+    }
+
     let mapEdge: MapEdge;
-    if (error || !data) {
+    if (!data) {
       mapEdge = { ...edge, id: uuid() };
     } else {
       const fromRow = rowToEdge(data as MapEdgeRow);
-      // direction is domain-only; preserve from the input
       mapEdge = { ...fromRow, direction: edge.direction };
     }
 

@@ -1,6 +1,7 @@
 import {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useAnnotationStore} from '@/store/annotationStore';
 import {clampToViewport} from '@/lib/positioning';
+import {useClickOutside} from '@/lib/useClickOutside';
 
 interface NoteTooltipProps {
   annotationId: string;
@@ -27,23 +28,7 @@ export function NoteTooltip({annotationId, anchorRect, onClose, onEdit}: NoteToo
     setPos({top: result.top, left: result.left});
   }, [anchorRect]);
 
-  useEffect(() => {
-    let mounted = false;
-    function onDocClick(e: MouseEvent) {
-      if (!mounted) return;
-      if (tooltipRef.current && !tooltipRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-    const timer = setTimeout(() => {
-      mounted = true;
-      document.addEventListener('mousedown', onDocClick);
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('mousedown', onDocClick);
-    };
-  }, [onClose]);
+  useClickOutside(tooltipRef, onClose, {deferArm: true});
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {

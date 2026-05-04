@@ -55,12 +55,13 @@ export function SettingsPage() {
     const confirmed2 = window.confirm('Are you absolutely sure?');
     if (!confirmed2) return;
 
-    // Wipe Supabase tables in dependency order
-    await supabase.from('annotations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('map_edges').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('map_nodes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('docs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('tags').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    // Atomic wipe via Supabase RPC (see supabase/migrations/0002_reset_all_data.sql)
+    const { error } = await supabase.rpc('reset_all_data');
+    if (error) {
+      console.error('Reset failed:', error);
+      window.alert(`Reset failed: ${error.message}`);
+      return;
+    }
 
     // Reset in-memory stores
     useAnnotationStore.getState().reset();

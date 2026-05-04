@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMapStore, type MapEdge } from '@/store/mapStore';
+import { useClickOutside } from '@/lib/useClickOutside';
 
 interface EdgePopoverProps {
   edgeId: string;
@@ -38,14 +39,7 @@ export function EdgePopover({ edgeId, topicId, position, onClose }: EdgePopoverP
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  // Dismiss on click-outside
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) onClose();
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [onClose]);
+  useClickOutside(popoverRef, onClose);
 
   if (!edge) return null;
 

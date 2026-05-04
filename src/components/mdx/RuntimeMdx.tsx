@@ -13,7 +13,26 @@ import { ConceptMap } from '@/components/mdx/ConceptMap';
 
 const components = { Verdict, Callout, Compare, DataTable, ConceptMap };
 
+const MAX_CACHE = 8;
 const cache = new Map<string, ReactElement>();
+
+function cacheGet(key: string): ReactElement | undefined {
+  const value = cache.get(key);
+  if (value === undefined) return undefined;
+  cache.delete(key);
+  cache.set(key, value);
+  return value;
+}
+
+function cacheSet(key: string, value: ReactElement): void {
+  if (cache.has(key)) {
+    cache.delete(key);
+  } else if (cache.size >= MAX_CACHE) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
+  cache.set(key, value);
+}
 
 class MdxErrorBoundary extends Component<
   { children: ReactNode },
@@ -36,12 +55,13 @@ class MdxErrorBoundary extends Component<
 }
 
 export function RuntimeMdx({ source }: { source: string }) {
-  const [el, setEl] = useState<ReactElement | null>(() => cache.get(source) ?? null);
+  const [el, setEl] = useState<ReactElement | null>(() => cacheGet(source) ?? null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (cache.has(source)) {
-      setEl(cache.get(source)!);
+    const cached = cacheGet(source);
+    if (cached) {
+      setEl(cached);
       return;
     }
     let cancelled = false;
@@ -55,7 +75,7 @@ export function RuntimeMdx({ source }: { source: string }) {
         });
         const Content = mod.default as (props: { components: typeof components }) => ReactElement;
         const rendered = <Content components={components} />;
-        cache.set(source, rendered);
+        cacheSet(source, rendered);
         if (!cancelled) setEl(rendered);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'MDX compile error');

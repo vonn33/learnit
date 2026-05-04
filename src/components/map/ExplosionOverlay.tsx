@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useMapStore } from '@/store/mapStore';
 import { useAnnotationStore } from '@/store/annotationStore';
+import { Z } from '@/lib/zIndex';
 
 interface ExplosionOverlayProps {
   nodeId: string;
@@ -106,7 +107,7 @@ export function ExplosionOverlay({
       />
 
       {/* SVG connector lines */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 41 }}>
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: Z.OVERLAY_SVG }}>
         {children.map((child, i) => (
           <line
             key={child.id}
@@ -124,7 +125,7 @@ export function ExplosionOverlay({
       {/* Center node chip */}
       <div
         className="absolute -translate-x-1/2 -translate-y-1/2 px-4 py-2 bg-[#1e1b4b] border-2 border-indigo-500 rounded-lg text-sm font-semibold text-slate-200 shadow-[0_0_20px_rgba(99,102,241,0.5)] whitespace-nowrap"
-        style={{ left: centerPos.x, top: centerPos.y, zIndex: 43, pointerEvents: 'auto' }}
+        style={{ left: centerPos.x, top: centerPos.y, zIndex: Z.OVERLAY_UI, pointerEvents: 'auto' }}
       >
         {node.label}
       </div>
@@ -133,7 +134,7 @@ export function ExplosionOverlay({
       {excerptText && (
         <div
           className="absolute -translate-x-1/2 w-48 bg-[#111827] border border-indigo-500/20 rounded-md p-2 text-center"
-          style={{ left: centerPos.x, top: centerPos.y + 36, zIndex: 43, pointerEvents: 'auto' }}
+          style={{ left: centerPos.x, top: centerPos.y + 36, zIndex: Z.OVERLAY_UI, pointerEvents: 'auto' }}
         >
           <p className="text-[10px] text-slate-400 italic leading-relaxed mb-1 line-clamp-3">
             "{excerptText}"
@@ -151,7 +152,7 @@ export function ExplosionOverlay({
       {!annotation && children.length === 0 && (
         <div
           className="absolute -translate-x-1/2 w-40 bg-[#111827] border border-indigo-500/10 rounded-md p-2 text-center"
-          style={{ left: centerPos.x, top: centerPos.y + 36, zIndex: 43, pointerEvents: 'auto' }}
+          style={{ left: centerPos.x, top: centerPos.y + 36, zIndex: Z.OVERLAY_UI, pointerEvents: 'auto' }}
         >
           <p className="text-[10px] text-slate-500 italic">no notes yet</p>
         </div>
@@ -162,7 +163,7 @@ export function ExplosionOverlay({
         <button
           key={child.id}
           className="absolute -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0f172a] border border-indigo-500/70 rounded-md text-[11px] text-indigo-300 hover:border-indigo-400 hover:text-indigo-200 transition-colors"
-          style={{ left: childPositions[i].x, top: childPositions[i].y, zIndex: 43, pointerEvents: 'auto' }}
+          style={{ left: childPositions[i].x, top: childPositions[i].y, zIndex: Z.OVERLAY_UI, pointerEvents: 'auto' }}
           onClick={() => onChildClick ? onChildClick(child.id) : onAnnotationJump(child.id)}
         >
           {child.label}
@@ -172,7 +173,7 @@ export function ExplosionOverlay({
       {/* Dismiss hint */}
       <div
         className="absolute bottom-2 right-3 text-[10px] text-slate-600"
-        style={{ zIndex: 43, pointerEvents: 'none' }}
+        style={{ zIndex: Z.OVERLAY_UI, pointerEvents: 'none' }}
       >
         click outside or Esc to close
       </div>
