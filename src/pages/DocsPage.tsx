@@ -240,7 +240,7 @@ export function DocsPage() {
 
   const rightPane = (
     <div
-      className="relative self-start"
+      className="relative self-start h-full"
       style={{
         position: 'sticky',
         top: 'calc(56px + 36px)',

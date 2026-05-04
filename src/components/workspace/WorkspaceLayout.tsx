@@ -90,11 +90,22 @@ export function WorkspaceLayout({left, right}: WorkspaceLayoutProps) {
 
         {hasRight && (
           <div
-            style={{
-              flexGrow: mode === 'focus-right' ? 1 : mode === 'split' ? 1 : undefined,
-              width: isRightCollapsed ? '32px' : undefined,
-              minWidth: isRightCollapsed ? '32px' : undefined,
-            }}
+            style={
+              mode === 'focus-right'
+                ? {
+                    position: 'fixed',
+                    top: 'calc(56px + 36px)',
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 18,
+                  }
+                : {
+                    flexGrow: mode === 'split' ? 1 : undefined,
+                    width: isRightCollapsed ? '32px' : undefined,
+                    minWidth: isRightCollapsed ? '32px' : undefined,
+                  }
+            }
             className={`min-w-0 transition-all duration-200 ${isRightCollapsed ? 'cursor-pointer' : ''}`}
             onClick={isRightCollapsed ? () => setMode('split') : undefined}
           >
