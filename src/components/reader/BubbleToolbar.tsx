@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useTagStore, type Tag} from '@/store/tagStore';
+import {useTextSelection} from '@/lib/useTextSelection';
 import {
   buildAnchorContext,
   getHighlightColorForTags,
@@ -17,11 +18,15 @@ interface BubbleToolbarProps {
 }
 
 export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
-  const [visible, setVisible] = useState(false);
-  const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
+  const {selection, clear} = useTextSelection({
+    containerSelector: 'article.prose',
+    trigger: 'pointer',
+  });
+  const visible = selection !== null;
+  const selectionRect = selection?.selectionRect ?? null;
+  const savedRange = selection?.savedRange ?? null;
+  const selectedText = selection?.text ?? '';
   const [pos, setPos] = useState({top: -9999, left: -9999});
-  const [savedRange, setSavedRange] = useState<Range | null>(null);
-  const [selectedText, setSelectedText] = useState('');
   const tags = useTagStore((s) => s.tags);
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   const [showTagMenu, setShowTagMenu] = useState(false);
@@ -30,58 +35,18 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
   const [showNodePicker, setShowNodePicker] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const noteInputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const addAnnotation = useAnnotationStore((s) => s.addAnnotation);
   const addNode = useMapStore((s) => s.addNode);
   const shouldRender = useDelayedUnmount(visible, 100);
 
   useEffect(() => {
-    function onSelectionChange() {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        // Don't hide if focus is inside our toolbar (e.g. note input is focused)
-        if (toolbarRef.current?.contains(document.activeElement)) return;
-
-        const sel = window.getSelection();
-        if (!sel || sel.isCollapsed || !sel.rangeCount) {
-          setVisible(false);
-          return;
-        }
-        const text = sel.toString().trim();
-        if (text.length < 3) {
-          setVisible(false);
-          return;
-        }
-        const anchor = sel.anchorNode;
-        const el =
-          anchor?.nodeType === Node.TEXT_NODE
-            ? (anchor as Text).parentElement
-            : (anchor as Element);
-        if (!el?.closest('article.prose')) {
-          setVisible(false);
-          return;
-        }
-
-        const range = sel.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        setSavedRange(range.cloneRange());
-        setSelectedText(text);
-        setSelectionRect(rect);
-        setSelectedTagId(null);
-        setShowTagMenu(false);
-        setShowNoteInput(false);
-        setNoteText('');
-        setShowNodePicker(false);
-        setVisible(true);
-      }, 80);
-    }
-
-    document.addEventListener('selectionchange', onSelectionChange);
-    return () => {
-      document.removeEventListener('selectionchange', onSelectionChange);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
+    if (!selection) return;
+    setSelectedTagId(null);
+    setShowTagMenu(false);
+    setShowNoteInput(false);
+    setNoteText('');
+    setShowNodePicker(false);
+  }, [selection]);
 
   useLayoutEffect(() => {
     if (!visible || !selectionRect || !toolbarRef.current) return;
@@ -110,8 +75,7 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
         : ancestor as Element;
       const existingMark = ancestorEl?.closest('mark[data-annotation-id]') as HTMLElement | null;
       if (existingMark) {
-        window.getSelection()?.removeAllRanges();
-        setVisible(false);
+        clear();
         existingMark.click();
         return;
       }
@@ -126,10 +90,9 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
         note,
         connectionUrl: '',
       });
-      window.getSelection()?.removeAllRanges();
-      setVisible(false);
+      clear();
     },
-    [savedRange, selectedText, selectedTagId, pageUrl, addAnnotation],
+    [savedRange, selectedText, selectedTagId, pageUrl, addAnnotation, clear],
   );
 
   useEffect(() => {
@@ -140,7 +103,7 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
           setShowNoteInput(false);
           setNoteText('');
         } else {
-          setVisible(false);
+          clear();
         }
         return;
       }
@@ -170,8 +133,7 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
       status: 'staged',
       annotationId,
     });
-    window.getSelection()?.removeAllRanges();
-    setVisible(false);
+    clear();
   }
 
   async function handleAddNode() {
@@ -193,8 +155,7 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
       annotationId,
     });
     await useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
-    window.getSelection()?.removeAllRanges();
-    setVisible(false);
+    clear();
   }
 
   function handleConnect() {
@@ -215,8 +176,7 @@ export function BubbleToolbar({pageUrl, topicId = ''}: BubbleToolbarProps) {
     useMapStore.getState().updateNode(topicId, nodeId, {annotationId});
     await useAnnotationStore.getState().updateAnnotation(annotationId, {mapNodeId: nodeId});
     setShowNodePicker(false);
-    window.getSelection()?.removeAllRanges();
-    setVisible(false);
+    clear();
   }
 
   const {bg: previewBg, border: previewBorder} = getHighlightColorForTags(
