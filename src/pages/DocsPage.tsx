@@ -141,6 +141,17 @@ export function DocsPage() {
     });
   }, [activeContent, slug, pathname]);
 
+  // Force-hide concept map on narrow viewports (single-column reader).
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    function apply() {
+      if (mq.matches) useWorkspaceStore.getState().setShowMap(false);
+    }
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
   // ALL hooks must be called before any early returns
   const handleMapNodeClick = useCallback((nodeId: string) => {
     const topicMap = useMapStore.getState().maps[topicId];
