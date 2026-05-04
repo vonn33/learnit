@@ -50,7 +50,8 @@ export function ReaderPrefsApplier(): null {
     html.style.setProperty('--reader-prose-weight', WEIGHT_VAR[fontWeight]);
     html.style.setProperty('--reader-line-height', LINE_HEIGHT_VAR[lineSpacing]);
     html.style.setProperty('--reader-measure', MEASURE_VAR[readingWidth]);
-    html.setAttribute('data-tint', paperTint);
+    if (paperTint === 'default') html.removeAttribute('data-tint');
+    else html.setAttribute('data-tint', paperTint);
     html.classList.toggle('reader-justify', justify);
     html.classList.toggle('reader-hyphenate', hyphenate);
   }, [fontFace, fontSize, fontWeight, lineSpacing, readingWidth, paperTint, justify, hyphenate]);

@@ -1,6 +1,5 @@
 import {describe, it, expect, beforeEach, afterEach} from 'vitest';
-import {render} from '@testing-library/react';
-import {act} from 'react-dom/test-utils';
+import {render, act} from '@testing-library/react';
 import {ReaderPrefsApplier} from '@/components/reader/ReaderPrefsApplier';
 import {useReaderStore} from '@/store/readerStore';
 
@@ -50,7 +49,7 @@ describe('ReaderPrefsApplier', () => {
     act(() => {
       useReaderStore.getState().setPaperTint('default');
     });
-    expect(document.documentElement.getAttribute('data-tint')).toBe('default');
+    expect(document.documentElement.getAttribute('data-tint')).toBeNull();
   });
 
   it('toggles reader-justify class', () => {

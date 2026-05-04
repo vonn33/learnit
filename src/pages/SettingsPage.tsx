@@ -104,6 +104,7 @@ export function SettingsPage() {
     // Clear local UI prefs
     localStorage.removeItem('handbook:ui');
     localStorage.removeItem('learnit-workspace');
+    localStorage.removeItem('learnit-reader');
 
     window.location.reload();
   }
