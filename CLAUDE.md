@@ -13,15 +13,17 @@ npm run test:watch   # Vitest in watch mode
 
 ## Architecture
 
-**LearnIt** is a reading and annotation tool. Documents, annotations, and concept maps persist in Supabase (Postgres) and sync across devices via realtime subscriptions. Only UI-layout state (`workspaceStore`) lives in `localStorage`.
+**LearnIt** is a reading and annotation tool. Documents, annotations, and concept maps persist in Supabase (Postgres) and sync across devices via realtime subscriptions. UI-layout state (`workspaceStore`) and reader presentation prefs (`readerStore`) are local-only.
 
 ### State & Data Flow
 
-Four Zustand stores are the single source of truth. `annotationStore`, `mapStore`, and `docStore` back to Supabase (Postgres) and subscribe to realtime changes; `workspaceStore` is local-only UI state:
-- `annotationStore` — highlights, notes, tags (Supabase)
+Six Zustand stores are the single source of truth. `annotationStore`, `mapStore`, `docStore`, and `tagStore` back to Supabase (Postgres) and subscribe to realtime changes; `workspaceStore` and `readerStore` are local-only UI state:
+- `annotationStore` — highlights, notes (Supabase)
 - `mapStore` — concept map nodes/edges per document (Supabase)
 - `docStore` — uploaded documents and their content (Supabase)
-- `workspaceStore` — UI layout (split/focus-left/focus-right modes)
+- `tagStore` — tags (Supabase)
+- `workspaceStore` — UI layout (split/focus-left/focus-right modes, sidebar, show map, default layout)
+- `readerStore` — typography + paper tint prefs (font face/size/weight, line spacing, width, tint, justify, hyphenate)
 
 ### Document Loading
 
