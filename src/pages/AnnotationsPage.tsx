@@ -304,7 +304,7 @@ export function AnnotationsPage() {
       )}
 
       {/* Search + tag filter */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-3 sticky top-14 z-[19] bg-[var(--color-background)] py-2 -my-2">
         <div className="relative flex-1">
           <Search
             size={13}
