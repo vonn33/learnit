@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 export type SelectionState = {
   text: string;
   savedRange: Range;
@@ -24,4 +26,49 @@ export function pickValidSelection(
     savedRange: range.cloneRange(),
     selectionRect: range.getBoundingClientRect(),
   };
+}
+
+interface Options {
+  containerSelector: string;
+  minLength?: number;
+  trigger: 'pointer' | 'touch';
+}
+
+export function useTextSelection({
+  containerSelector,
+  minLength = 3,
+  trigger,
+}: Options): {
+  selection: SelectionState | null;
+  clear: () => void;
+} {
+  const [selection, setSelection] = useState<SelectionState | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const evaluate = useCallback(() => {
+    const active = document.activeElement;
+    if (active?.closest('[data-highlight-popover="true"]')) return;
+    const next = pickValidSelection(window.getSelection(), containerSelector, minLength);
+    setSelection(next);
+  }, [containerSelector, minLength]);
+
+  useEffect(() => {
+    if (trigger !== 'pointer') return;
+    function onSelectionChange() {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(evaluate, 80);
+    }
+    document.addEventListener('selectionchange', onSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', onSelectionChange);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [trigger, evaluate]);
+
+  const clear = useCallback(() => {
+    setSelection(null);
+    window.getSelection()?.removeAllRanges();
+  }, []);
+
+  return { selection, clear };
 }

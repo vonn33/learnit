@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { pickValidSelection } from '@/lib/useTextSelection';
+import { renderHook, act } from '@testing-library/react';
+import { pickValidSelection, useTextSelection } from '@/lib/useTextSelection';
 
 function makeContainer(html: string): HTMLElement {
   const div = document.createElement('div');
@@ -54,3 +55,40 @@ describe('pickValidSelection', () => {
     expect(result!.savedRange).toBeInstanceOf(Range);
   });
 });
+
+describe('useTextSelection (pointer mode)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    window.getSelection()?.removeAllRanges();
+  });
+
+  it('captures selection after selectionchange fires', async () => {
+    const c = makeContainer('the quick brown fox');
+    const { result } = renderHook(() =>
+      useTextSelection({ containerSelector: '.prose', trigger: 'pointer' }),
+    );
+    expect(result.current.selection).toBeNull();
+    act(() => {
+      makeSelection(c.firstChild!, 4, 9);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    await act(() => new Promise((r) => setTimeout(r, 100)));
+    expect(result.current.selection?.text).toBe('quick');
+  });
+
+  it('clear() empties selection', async () => {
+    const c = makeContainer('the quick brown fox');
+    const { result } = renderHook(() =>
+      useTextSelection({ containerSelector: '.prose', trigger: 'pointer' }),
+    );
+    act(() => {
+      makeSelection(c.firstChild!, 4, 9);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    await act(() => new Promise((r) => setTimeout(r, 100)));
+    expect(result.current.selection).not.toBeNull();
+    act(() => result.current.clear());
+    expect(result.current.selection).toBeNull();
+  });
+});
+
