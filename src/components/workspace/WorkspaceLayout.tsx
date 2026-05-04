@@ -22,14 +22,16 @@ export function WorkspaceLayout({left, right}: WorkspaceLayoutProps) {
   const isRightCollapsed = hasRight && mode === 'focus-left';
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-1 px-2 py-1 border-b border-border shrink-0">
+    <div className="flex flex-col">
+      <div
+        className="sticky top-14 z-[19] flex items-center gap-1 px-2 py-1 border-b border-border shrink-0 bg-[var(--color-background)]"
+      >
         {hasRight && (
           <>
             <button
               aria-label="Focus reader"
               onClick={() => setMode(mode === 'focus-left' ? 'split' : 'focus-left')}
-              className="p-1 rounded hover:bg-muted text-foreground/60 hover:text-foreground"
+              className="hidden md:inline-flex p-1 rounded hover:bg-muted text-foreground/60 hover:text-foreground"
               title="Focus reader"
             >
               <Maximize2 size={14} />
@@ -37,7 +39,7 @@ export function WorkspaceLayout({left, right}: WorkspaceLayoutProps) {
             <button
               aria-label="Reset layout"
               onClick={() => setMode('split')}
-              className="p-1 rounded hover:bg-muted text-foreground/60 hover:text-foreground"
+              className="hidden md:inline-flex p-1 rounded hover:bg-muted text-foreground/60 hover:text-foreground"
               title="Split view"
             >
               <Columns2 size={14} />
@@ -45,19 +47,19 @@ export function WorkspaceLayout({left, right}: WorkspaceLayoutProps) {
             <button
               aria-label="Focus map"
               onClick={() => setMode(mode === 'focus-right' ? 'split' : 'focus-right')}
-              className="p-1 rounded hover:bg-muted text-foreground/60 hover:text-foreground"
+              className="hidden md:inline-flex p-1 rounded hover:bg-muted text-foreground/60 hover:text-foreground"
               title="Focus map"
             >
               <Maximize2 size={14} />
             </button>
-            <div className="w-px h-4 bg-border mx-0.5" />
+            <div className="hidden md:block w-px h-4 bg-border mx-0.5" />
           </>
         )}
         {right && (
           <button
             aria-label={showMap ? 'Hide concept map' : 'Show concept map'}
             onClick={() => setShowMap(!showMap)}
-            className={`p-1 rounded hover:bg-muted ${
+            className={`hidden md:inline-flex p-1 rounded hover:bg-muted ${
               showMap ? 'text-foreground/60 hover:text-foreground' : 'text-primary'
             }`}
             title={showMap ? 'Hide concept map' : 'Show concept map'}
@@ -67,7 +69,7 @@ export function WorkspaceLayout({left, right}: WorkspaceLayoutProps) {
         )}
       </div>
 
-      <div id="workspace-container" className="flex flex-1 overflow-hidden">
+      <div id="workspace-container" className="flex">
         <div
           style={
             hasRight
@@ -78,7 +80,7 @@ export function WorkspaceLayout({left, right}: WorkspaceLayoutProps) {
                 }
               : {width: '100%', flexGrow: 1}
           }
-          className={`overflow-auto transition-all duration-200 ${isLeftCollapsed ? 'cursor-pointer' : ''}`}
+          className={`min-w-0 transition-all duration-200 ${isLeftCollapsed ? 'cursor-pointer' : ''}`}
           onClick={isLeftCollapsed ? () => setMode('split') : undefined}
         >
           {left}
@@ -93,7 +95,7 @@ export function WorkspaceLayout({left, right}: WorkspaceLayoutProps) {
               width: isRightCollapsed ? '32px' : undefined,
               minWidth: isRightCollapsed ? '32px' : undefined,
             }}
-            className={`overflow-auto transition-all duration-200 ${isRightCollapsed ? 'cursor-pointer' : ''}`}
+            className={`min-w-0 transition-all duration-200 ${isRightCollapsed ? 'cursor-pointer' : ''}`}
             onClick={isRightCollapsed ? () => setMode('split') : undefined}
           >
             {right}
