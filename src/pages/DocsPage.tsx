@@ -10,6 +10,7 @@ import {WorkspaceLayout} from '@/components/workspace/WorkspaceLayout';
 import {MapCanvas} from '@/components/map/MapCanvas';
 import {StagingInbox} from '@/components/map/StagingInbox';
 import {saveReadingProgress, getReadingProgress} from '@/lib/storage';
+import {computeScrollFraction} from '@/lib/scrollFraction';
 import {useMapStore} from '@/store/mapStore';
 import {useWorkspaceStore} from '@/store/workspaceStore';
 import {useDocStore, type Doc} from '@/store/docStore';
@@ -59,21 +60,21 @@ function ProgressBar({pageUrl}: {pageUrl: string}) {
 
   useEffect(() => {
     function onScroll() {
-      const el = document.getElementById('docs-content');
-      if (!el || !ref.current) return;
-      const scrollable = el.scrollHeight - el.clientHeight;
-      if (scrollable <= 0) return;
-      const fraction = el.scrollTop / scrollable;
+      if (!ref.current) return;
+      const fraction = computeScrollFraction({
+        scrollY: window.scrollY,
+        scrollHeight: document.documentElement.scrollHeight,
+        viewportHeight: window.innerHeight,
+      });
       ref.current.style.width = `${fraction * 100}%`;
       saveReadingProgress(pageUrl, fraction);
     }
-    const el = document.getElementById('docs-content');
-    el?.addEventListener('scroll', onScroll, {passive: true});
-    return () => el?.removeEventListener('scroll', onScroll);
+    window.addEventListener('scroll', onScroll, {passive: true});
+    return () => window.removeEventListener('scroll', onScroll);
   }, [pageUrl]);
 
   return (
-    <div className="h-0.5 bg-[var(--color-border)] fixed top-12 left-0 right-0 z-20">
+    <div className="fixed top-0 left-0 right-0 h-0.5 z-[21] bg-transparent">
       <div
         ref={ref}
         className="h-full bg-[var(--color-primary)] transition-none"
@@ -125,6 +126,20 @@ export function DocsPage() {
     if (activeContent?.slug === slug) return;
     void fetchContent(slug);
   }, [slug, activeContent?.slug, fetchContent]);
+
+  // Restore reading scroll position when content loads (window scroll, not inner div).
+  useEffect(() => {
+    if (!activeContent || activeContent.slug !== slug) return;
+    const progress = getReadingProgress()[pathname];
+    if (!progress) {
+      window.scrollTo({top: 0, behavior: 'auto'});
+      return;
+    }
+    requestAnimationFrame(() => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo({top: progress.scrollFraction * max, behavior: 'auto'});
+    });
+  }, [activeContent, slug, pathname]);
 
   // ALL hooks must be called before any early returns
   const handleMapNodeClick = useCallback((nodeId: string) => {
@@ -189,7 +204,7 @@ export function DocsPage() {
   const hasToc = tocEntries.length > 0;
 
   const leftPane = (
-    <div id="docs-content" className="h-full overflow-y-auto">
+    <div className="min-w-0">
       <ProgressBar pageUrl={pathname} />
       <div className="flex justify-end items-center gap-1 px-4 pt-2">
         <AnnotationToggle />
@@ -213,7 +228,7 @@ export function DocsPage() {
           )}
         </article>
         {showToc && hasToc && (
-          <aside className="hidden lg:block w-56 shrink-0 sticky top-4 self-start">
+          <aside className="hidden lg:block w-56 shrink-0 sticky top-[calc(56px+36px+8px)] self-start">
             <TOCPanel toc={tocEntries} />
           </aside>
         )}
