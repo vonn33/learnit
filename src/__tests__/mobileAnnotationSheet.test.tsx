@@ -85,3 +85,44 @@ describe('MobileAnnotationSheet', () => {
     expect(spy).toHaveBeenCalledWith(expect.objectContaining({tagIds: ['t1']}));
   });
 });
+
+describe('MobileAnnotationSheet — note mode', () => {
+  it('tapping pencil reveals note input and Save button', async () => {
+    render(<MobileAnnotationSheet pageUrl="doc-1" />);
+    selectInProse('quick brown fox');
+    await screen.findByRole('dialog', {name: /annotate/i});
+    fireEvent.click(screen.getByRole('button', {name: /add note/i}));
+    expect(screen.getByPlaceholderText(/add a note/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: /save highlight/i})).toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: /^highlight$/i})).toBeNull();
+  });
+
+  it('typing then Save dispatches addAnnotation with note text', async () => {
+    const spy = vi.spyOn(useAnnotationStore.getState(), 'addAnnotation')
+      .mockResolvedValue('new-id');
+    render(<MobileAnnotationSheet pageUrl="doc-1" />);
+    selectInProse('quick brown fox');
+    await screen.findByRole('dialog', {name: /annotate/i});
+    fireEvent.click(screen.getByRole('button', {name: /add note/i}));
+    const input = screen.getByPlaceholderText(/add a note/i);
+    fireEvent.change(input, {target: {value: 'pivotal moment'}});
+    fireEvent.click(screen.getByRole('button', {name: /save highlight/i}));
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'highlight',
+      note: 'pivotal moment',
+    }));
+  });
+
+  it('Enter in note input also saves', async () => {
+    const spy = vi.spyOn(useAnnotationStore.getState(), 'addAnnotation')
+      .mockResolvedValue('new-id');
+    render(<MobileAnnotationSheet pageUrl="doc-1" />);
+    selectInProse('quick brown fox');
+    await screen.findByRole('dialog', {name: /annotate/i});
+    fireEvent.click(screen.getByRole('button', {name: /add note/i}));
+    const input = screen.getByPlaceholderText(/add a note/i);
+    fireEvent.change(input, {target: {value: 'short'}});
+    fireEvent.keyDown(input, {key: 'Enter'});
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({note: 'short'}));
+  });
+});

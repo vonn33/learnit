@@ -24,6 +24,9 @@ export function MobileAnnotationSheet({pageUrl, topicId: _topicId}: MobileAnnota
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
+  const [noteMode, setNoteMode] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const noteInputRef = useRef<HTMLInputElement>(null);
 
   const visible = selection !== null;
   const shouldRender = useDelayedUnmount(visible, 180);
@@ -32,7 +35,14 @@ export function MobileAnnotationSheet({pageUrl, topicId: _topicId}: MobileAnnota
   useEffect(() => {
     if (!selection) return;
     setSelectedTagId(null);
+    setNoteMode(false);
+    setNoteText('');
   }, [selection]);
+
+  // Focus the note input when note mode activates
+  useEffect(() => {
+    if (noteMode) noteInputRef.current?.focus();
+  }, [noteMode]);
 
   async function handleHighlight() {
     if (!selection) return;
@@ -42,7 +52,7 @@ export function MobileAnnotationSheet({pageUrl, topicId: _topicId}: MobileAnnota
       text: selection.text,
       anchorContext: buildAnchorContext(selection.savedRange),
       tagIds: selectedTagId ? [selectedTagId] : [],
-      note: '',
+      note: noteText,
       connectionUrl: '',
     });
     clear();
@@ -107,30 +117,71 @@ export function MobileAnnotationSheet({pageUrl, topicId: _topicId}: MobileAnnota
         </div>
 
         {/* Action row */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void handleHighlight()}
-            className="flex-1 rounded-lg bg-[var(--color-primary)] px-3 py-2.5 text-[13px] font-semibold text-[var(--color-primary-foreground)]"
-          >
-            Highlight
-          </button>
-          <button
-            type="button"
-            aria-label="Add note"
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2.5 text-[var(--color-foreground)]"
-          >
-            <Pencil size={14} />
-          </button>
-          <button
-            type="button"
-            aria-label="Cancel"
-            onClick={handleCancel}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2.5 text-[var(--color-muted-foreground)]"
-          >
-            ✕
-          </button>
-        </div>
+        {noteMode ? (
+          <>
+            <input
+              ref={noteInputRef}
+              type="text"
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void handleHighlight();
+                }
+                if (e.key === 'Escape') {
+                  setNoteMode(false);
+                  setNoteText('');
+                }
+              }}
+              placeholder="Add a note…"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-vellum)] px-3 py-2 text-[13px] text-[var(--color-foreground)] outline-none focus:ring-1 ring-[var(--color-primary)]/50"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleHighlight()}
+                className="flex-1 rounded-lg bg-[var(--color-primary)] px-3 py-2.5 text-[13px] font-semibold text-[var(--color-primary-foreground)]"
+              >
+                Save highlight
+              </button>
+              <button
+                type="button"
+                aria-label="Cancel"
+                onClick={handleCancel}
+                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2.5 text-[var(--color-muted-foreground)]"
+              >
+                ✕
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleHighlight()}
+              className="flex-1 rounded-lg bg-[var(--color-primary)] px-3 py-2.5 text-[13px] font-semibold text-[var(--color-primary-foreground)]"
+            >
+              Highlight
+            </button>
+            <button
+              type="button"
+              aria-label="Add note"
+              onClick={() => setNoteMode(true)}
+              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2.5 text-[var(--color-foreground)]"
+            >
+              <Pencil size={14} />
+            </button>
+            <button
+              type="button"
+              aria-label="Cancel"
+              onClick={handleCancel}
+              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2.5 text-[var(--color-muted-foreground)]"
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
