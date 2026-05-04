@@ -46,10 +46,10 @@ export function Shell() {
   }, []);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-screen">
       <Navbar onSearchOpen={() => setSearchOpen(true)} />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         {/* Desktop sidebar */}
         {showSidebar && <Sidebar className="hidden md:flex md:flex-col" />}
 
@@ -77,7 +77,7 @@ export function Shell() {
           </button>
         )}
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 min-w-0">
           <Outlet />
         </main>
       </div>

@@ -83,6 +83,14 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
+html, body {
+  min-height: 100dvh;
+}
+
+body {
+  overscroll-behavior-y: contain;
+}
+
 /* Subtle paper texture across the whole app — sits above bg, below content */
 body::before {
   content: "";
@@ -101,7 +109,7 @@ html.light body::before {
 }
 
 #root {
-  height: 100dvh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   position: relative;
