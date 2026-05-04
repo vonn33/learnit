@@ -12,29 +12,39 @@ const Right = () => <div data-testid="right">Map</div>;
 
 describe('WorkspaceLayout', () => {
   it('renders both panes in split mode', () => {
+    useWorkspaceStore.getState().setMode('split');
+    useWorkspaceStore.getState().setShowMap(true);
     render(<WorkspaceLayout left={<Left />} right={<Right />} />);
     expect(screen.getByTestId('left')).toBeInTheDocument();
     expect(screen.getByTestId('right')).toBeInTheDocument();
   });
 
   it('renders resize handle between panes', () => {
+    useWorkspaceStore.getState().setMode('split');
+    useWorkspaceStore.getState().setShowMap(true);
     render(<WorkspaceLayout left={<Left />} right={<Right />} />);
     expect(screen.getByRole('separator')).toBeInTheDocument();
   });
 
   it('can focus left pane (reader)', () => {
+    useWorkspaceStore.getState().setMode('split');
+    useWorkspaceStore.getState().setShowMap(true);
     render(<WorkspaceLayout left={<Left />} right={<Right />} />);
     fireEvent.click(screen.getByLabelText('Focus reader'));
     expect(useWorkspaceStore.getState().mode).toBe('focus-left');
   });
 
   it('can focus right pane (map)', () => {
+    useWorkspaceStore.getState().setMode('split');
+    useWorkspaceStore.getState().setShowMap(true);
     render(<WorkspaceLayout left={<Left />} right={<Right />} />);
     fireEvent.click(screen.getByLabelText('Focus map'));
     expect(useWorkspaceStore.getState().mode).toBe('focus-right');
   });
 
   it('can return to split mode', () => {
+    useWorkspaceStore.getState().setMode('split');
+    useWorkspaceStore.getState().setShowMap(true);
     render(<WorkspaceLayout left={<Left />} right={<Right />} />);
     fireEvent.click(screen.getByLabelText('Focus reader'));
     fireEvent.click(screen.getByLabelText('Reset layout'));

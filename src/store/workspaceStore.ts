@@ -23,13 +23,13 @@ interface WorkspaceState {
 }
 
 const DEFAULTS = {
-  mode: 'split' as PaneMode,
+  mode: 'focus-left' as PaneMode,
   splitPercent: 40,
   sidebarCollapsed: false,
-  showMap: true,
+  showMap: false,
   showStagingInbox: true,
   showToc: true,
-  defaultLayout: 'split' as DefaultLayout,
+  defaultLayout: 'reader-only' as DefaultLayout,
 };
 
 export const useWorkspaceStore = create<WorkspaceState>()(
