@@ -92,3 +92,35 @@ describe('useTextSelection (pointer mode)', () => {
   });
 });
 
+describe('useTextSelection (touch mode)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    window.getSelection()?.removeAllRanges();
+  });
+
+  it('does NOT capture on selectionchange in touch mode', async () => {
+    const c = makeContainer('the quick brown fox');
+    const { result } = renderHook(() =>
+      useTextSelection({ containerSelector: '.prose', trigger: 'touch' }),
+    );
+    act(() => {
+      makeSelection(c.firstChild!, 4, 9);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    await act(() => new Promise((r) => setTimeout(r, 100)));
+    expect(result.current.selection).toBeNull();
+  });
+
+  it('captures on touchend in touch mode', () => {
+    const c = makeContainer('the quick brown fox');
+    const { result } = renderHook(() =>
+      useTextSelection({ containerSelector: '.prose', trigger: 'touch' }),
+    );
+    act(() => {
+      makeSelection(c.firstChild!, 4, 9);
+      document.dispatchEvent(new Event('touchend'));
+    });
+    expect(result.current.selection?.text).toBe('quick');
+  });
+});
+

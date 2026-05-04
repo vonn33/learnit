@@ -65,6 +65,17 @@ export function useTextSelection({
     };
   }, [trigger, evaluate]);
 
+  useEffect(() => {
+    if (trigger !== 'touch') return;
+    function onTouchEnd() {
+      evaluate();
+    }
+    document.addEventListener('touchend', onTouchEnd);
+    return () => {
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [trigger, evaluate]);
+
   const clear = useCallback(() => {
     setSelection(null);
     window.getSelection()?.removeAllRanges();
