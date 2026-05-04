@@ -41,6 +41,32 @@
 
 :root {
   color-scheme: dark;
+
+  /* Reader preset scales */
+  --reader-size-xs: 0.875rem;
+  --reader-size-s:  0.95rem;
+  --reader-size-m:  1.0625rem;
+  --reader-size-l:  1.1875rem;
+  --reader-size-xl: 1.3125rem;
+
+  --reader-lh-tight:  1.45;
+  --reader-lh-normal: 1.7;
+  --reader-lh-loose:  1.9;
+
+  --reader-measure-narrow: 60ch;
+  --reader-measure-medium: 68ch;
+  --reader-measure-wide:   84ch;
+
+  --reader-weight-light:    360;
+  --reader-weight-regular:  420;
+  --reader-weight-medium:   480;
+
+  /* Live values — overwritten by ReaderPrefsApplier */
+  --reader-base-size:    var(--reader-size-m);
+  --reader-line-height:  var(--reader-lh-normal);
+  --reader-prose-weight: var(--reader-weight-regular);
+  --reader-measure:      var(--reader-measure-medium);
+  --reader-font-prose:   var(--font-prose);
 }
 
 /* ───────── Light paper — cream, ink, oxblood ───────── */
@@ -175,11 +201,11 @@ span.handbook-note-dot {
 /* ───────── Prose — long-form reading optimized ───────── */
 .prose {
   color: var(--color-foreground);
-  font-family: var(--font-prose);
-  font-variation-settings: "opsz" 17;
-  font-size: 1.0625rem;     /* 17px — better for serifs */
-  line-height: 1.7;
-  max-width: 68ch;
+  font-family: var(--reader-font-prose);
+  font-variation-settings: "opsz" 17, "wght" var(--reader-prose-weight);
+  font-size: var(--reader-base-size);
+  line-height: var(--reader-line-height);
+  max-width: var(--reader-measure);
   hanging-punctuation: first last;
   text-wrap: pretty;
 }
@@ -223,6 +249,7 @@ span.handbook-note-dot {
 
 .prose p {
   margin-bottom: 1.15rem;
+  line-height: var(--reader-line-height);
   orphans: 3;
   widows: 3;
 }
@@ -285,6 +312,16 @@ span.handbook-note-dot {
   padding: 0;
   font-size: 0.86rem;
   line-height: 1.6;
+}
+
+/* Reader pref toggles — set on <html> by ReaderPrefsApplier */
+.reader-justify .prose p {
+  text-align: justify;
+}
+
+.reader-hyphenate .prose p {
+  hyphens: auto;
+  -webkit-hyphens: auto;
 }
 
 .prose a {
@@ -441,3 +478,31 @@ span.handbook-note-dot {
   background-clip: padding-box;
 }
 *::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); background-clip: padding-box; }
+
+/* Paper tints — override --color-background and --color-card per theme */
+html[data-tint="vellum"] {
+  --color-background: oklch(0.18 0.018 70);
+  --color-card: oklch(0.235 0.02 70);
+}
+html.light[data-tint="vellum"] {
+  --color-background: oklch(0.96 0.022 80);
+  --color-card: oklch(0.985 0.018 80);
+}
+
+html[data-tint="cream"] {
+  --color-background: oklch(0.18 0.025 85);
+  --color-card: oklch(0.235 0.025 85);
+}
+html.light[data-tint="cream"] {
+  --color-background: oklch(0.965 0.028 95);
+  --color-card: oklch(0.985 0.022 95);
+}
+
+html[data-tint="slate"] {
+  --color-background: oklch(0.17 0.015 240);
+  --color-card: oklch(0.22 0.015 240);
+}
+html.light[data-tint="slate"] {
+  --color-background: oklch(0.95 0.012 240);
+  --color-card: oklch(0.98 0.008 240);
+}
