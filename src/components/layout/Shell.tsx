@@ -4,6 +4,7 @@ import {Navbar} from './Navbar';
 import {Sidebar} from './Sidebar';
 import {Menu, X} from 'lucide-react';
 import {CommandPalette} from '@/components/ui/CommandPalette';
+import {ReaderPrefsApplier} from '@/components/reader/ReaderPrefsApplier';
 import {useDocStore} from '@/store/docStore';
 import {useAnnotationStore} from '@/store/annotationStore';
 import {useMapStore} from '@/store/mapStore';
@@ -47,6 +48,7 @@ export function Shell() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <ReaderPrefsApplier />
       <Navbar onSearchOpen={() => setSearchOpen(true)} />
 
       <div className="flex flex-1">
