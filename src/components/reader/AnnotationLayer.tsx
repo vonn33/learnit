@@ -2,9 +2,14 @@ import {useEffect, useRef, useState} from 'react';
 import {useTagStore} from '@/store/tagStore';
 import {applyHighlightsToDOM} from '@/lib/highlights';
 import {BubbleToolbar} from './BubbleToolbar';
+import {MobileAnnotationSheet} from './MobileAnnotationSheet';
 import {NotePanel} from './NotePanel';
 import {NoteTooltip} from './NoteTooltip';
 import {useAnnotationStore} from '@/store/annotationStore';
+
+const isCoarsePointer =
+  typeof window !== 'undefined' &&
+  window.matchMedia('(pointer: coarse)').matches;
 
 interface AnnotationLayerProps {
   pageUrl: string;
@@ -115,12 +120,23 @@ export function AnnotationLayer({pageUrl, topicId}: AnnotationLayerProps) {
     return () => document.removeEventListener('click', onDocClick);
   }, []);
 
+  useEffect(() => {
+    if (!isCoarsePointer) return;
+    function suppress(e: Event) {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('article.prose')) e.preventDefault();
+    }
+    document.addEventListener('contextmenu', suppress);
+    return () => document.removeEventListener('contextmenu', suppress);
+  }, []);
+
   return (
     <>
-      <BubbleToolbar
-        pageUrl={pageUrl}
-        topicId={topicId}
-      />
+      {isCoarsePointer ? (
+        <MobileAnnotationSheet pageUrl={pageUrl} topicId={topicId} />
+      ) : (
+        <BubbleToolbar pageUrl={pageUrl} topicId={topicId} />
+      )}
       {activeAnnotationId && (
         <NotePanel
           annotationId={activeAnnotationId}

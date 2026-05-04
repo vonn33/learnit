@@ -724,6 +724,8 @@ export function MobileAnnotationSheet({pageUrl}: MobileAnnotationSheetProps) {
 Run: `npm test -- --run mobileAnnotationSheet`
 Expected: PASS — 5 tests pass. The "Add note" button exists but does nothing yet — that's expected, no test for it yet.
 
+> **Implementation note (2026-05-04):** Test diverged from plan — used `act()` + `findByRole` (async) instead of synchronous `getByRole`; also scoped the `getByText` assertion to within the dialog element to avoid duplicate-match errors with the `article.prose` backdrop node.
+
 - [ ] **Step 5: Build check**
 
 Run: `npm run build`
