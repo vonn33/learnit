@@ -23,6 +23,7 @@ function selectInProse(text: string) {
 }
 
 beforeEach(() => {
+  vi.clearAllMocks();
   document.body.innerHTML = '';
   window.getSelection()?.removeAllRanges();
   useAnnotationStore.setState({annotations: [], showAnnotations: true});
@@ -83,6 +84,31 @@ describe('MobileAnnotationSheet', () => {
     fireEvent.click(screen.getByRole('button', {name: /key point/i}));
     fireEvent.click(screen.getByRole('button', {name: /^highlight$/i}));
     expect(spy).toHaveBeenCalledWith(expect.objectContaining({tagIds: ['t1']}));
+  });
+});
+
+describe('MobileAnnotationSheet — dismissal', () => {
+  it('Cancel (✕) dismisses without saving', async () => {
+    const spy = vi.spyOn(useAnnotationStore.getState(), 'addAnnotation')
+      .mockResolvedValue('new-id');
+    render(<MobileAnnotationSheet pageUrl="doc-1" />);
+    selectInProse('quick brown fox');
+    await screen.findByRole('dialog', {name: /annotate/i});
+    fireEvent.click(screen.getByRole('button', {name: /^cancel$/i}));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('mousedown outside the sheet dismisses', async () => {
+    render(<MobileAnnotationSheet pageUrl="doc-1" />);
+    selectInProse('quick brown fox');
+    await screen.findByRole('dialog', {name: /annotate/i});
+    // useClickOutside is configured with deferArm: true — wait one tick for
+    // its arming setTimeout(0) to fire before our mousedown can dismiss.
+    await new Promise((r) => setTimeout(r, 10));
+    fireEvent.mouseDown(document.body);
+    // useDelayedUnmount keeps the dialog mounted for 180ms after visible flips false
+    await new Promise((r) => setTimeout(r, 220));
+    expect(screen.queryByRole('dialog', {name: /annotate/i})).toBeNull();
   });
 });
 

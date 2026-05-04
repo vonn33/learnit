@@ -4,6 +4,7 @@ import {useTextSelection} from '@/lib/useTextSelection';
 import {useTagStore} from '@/store/tagStore';
 import {useAnnotationStore} from '@/store/annotationStore';
 import {useDelayedUnmount} from '@/lib/useDelayedUnmount';
+import {useClickOutside} from '@/lib/useClickOutside';
 import {buildAnchorContext} from '@/lib/highlights';
 import {Z} from '@/lib/zIndex';
 
@@ -26,10 +27,14 @@ export function MobileAnnotationSheet({pageUrl, topicId: _topicId}: MobileAnnota
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   const [noteMode, setNoteMode] = useState(false);
   const [noteText, setNoteText] = useState('');
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const dragStartYRef = useRef<number | null>(null);
   const noteInputRef = useRef<HTMLInputElement>(null);
 
   const visible = selection !== null;
   const shouldRender = useDelayedUnmount(visible, 180);
+
+  useClickOutside(sheetRef, clear, {deferArm: true});
 
   // Reset per-selection UI state when a new selection arrives
   useEffect(() => {
@@ -37,6 +42,7 @@ export function MobileAnnotationSheet({pageUrl, topicId: _topicId}: MobileAnnota
     setSelectedTagId(null);
     setNoteMode(false);
     setNoteText('');
+    setDragOffsetY(0);
   }, [selection]);
 
   // Focus the note input when note mode activates
@@ -74,18 +80,38 @@ export function MobileAnnotationSheet({pageUrl, topicId: _topicId}: MobileAnnota
         'fixed inset-x-0 bottom-0',
         'rounded-t-2xl border-t border-[var(--color-rule)] bg-[var(--color-card)]',
         'shadow-[0_-8px_32px_rgba(0,0,0,0.32)]',
-        'transition-transform duration-[180ms] ease-out',
-        visible ? 'translate-y-0' : 'translate-y-full',
+        dragOffsetY === 0 ? 'transition-transform duration-[180ms] ease-out' : '',
       ].join(' ')}
       style={{
         zIndex: Z.TOPMOST,
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         overscrollBehavior: 'contain',
+        transform: visible
+          ? `translateY(${dragOffsetY}px)`
+          : 'translateY(100%)',
       }}
     >
       <div className="flex flex-col gap-2.5 px-4 pt-2 pb-3">
         {/* Drag handle */}
-        <div className="mx-auto w-8 h-[3px] bg-[var(--color-rule)] rounded-full" />
+        <div
+          className="mx-auto w-8 h-[3px] bg-[var(--color-rule)] rounded-full"
+          onTouchStart={(e) => {
+            dragStartYRef.current = e.touches[0].clientY;
+          }}
+          onTouchMove={(e) => {
+            if (dragStartYRef.current === null) return;
+            const dy = e.touches[0].clientY - dragStartYRef.current;
+            setDragOffsetY(Math.max(0, dy));
+          }}
+          onTouchEnd={() => {
+            if (dragOffsetY > 60) {
+              clear();
+            }
+            setDragOffsetY(0);
+            dragStartYRef.current = null;
+          }}
+          style={{touchAction: 'none'}}
+        />
 
         {/* Selected-text excerpt */}
         <div className="border-l-2 border-[var(--color-rule)] pl-2 italic text-[11px] text-[var(--color-muted-foreground)] line-clamp-2">
