@@ -135,10 +135,11 @@ export function Sidebar({className = ''}: {className?: string}) {
   return (
     <aside
       className={[
-        'shrink-0 overflow-y-auto border-r border-[var(--color-rule)] bg-[var(--color-card)] py-3 flex flex-col transition-all duration-200 relative',
+        'shrink-0 self-start sticky top-14 border-r border-[var(--color-rule)] bg-[var(--color-card)] py-3 flex flex-col transition-all duration-200',
         collapsed ? 'w-12' : 'w-64',
         className,
       ].join(' ')}
+      style={{maxHeight: 'calc(100dvh - 56px)', overflowY: 'auto'}}
     >
       {!collapsed && (
         <div className="flex-1">

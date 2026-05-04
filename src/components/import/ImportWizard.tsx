@@ -5,8 +5,10 @@ import { MetadataForm, parseFile, toNewDoc, type ParsedFile } from './MetadataFo
 import { useDocStore } from '@/store/docStore';
 import { useNavigate } from 'react-router';
 import { X } from 'lucide-react';
+import {useBodyScrollLock} from '@/lib/useBodyScrollLock';
 
 export function ImportWizard({ open, onClose }: { open: boolean; onClose: () => void }) {
+  useBodyScrollLock(open);
   const [parsed, setParsed] = useState<ParsedFile[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

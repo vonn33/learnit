@@ -28,7 +28,7 @@ export function Navbar({onSearchOpen}: {onSearchOpen: () => void}) {
   ];
 
   return (
-    <header className="relative h-14 shrink-0 bg-[var(--color-card)] flex items-center px-5 gap-4 border-b border-[var(--color-rule)]">
+    <header className="sticky top-0 z-[20] h-14 shrink-0 bg-[var(--color-card)] flex items-center px-5 gap-4 border-b border-[var(--color-rule)]">
       {/* Top hairline ornament — like a book's headband */}
       <span
         aria-hidden
