@@ -43,8 +43,11 @@ describe('MobileAnnotationSheet', () => {
   it('renders sheet with selected text after touchend', async () => {
     render(<MobileAnnotationSheet pageUrl="doc-1" />);
     selectInProse('quick brown fox');
-    expect(await screen.findByRole('dialog', {name: /annotate/i})).toBeInTheDocument();
-    expect(screen.getByText(/quick brown fox/)).toBeInTheDocument();
+    const dialog = await screen.findByRole('dialog', {name: /annotate/i});
+    expect(dialog).toBeInTheDocument();
+    // Query within the dialog so the article.prose backdrop doesn't cause duplicate-match errors
+    const {getByText} = require('@testing-library/dom');
+    expect(getByText(dialog, /quick brown fox/)).toBeInTheDocument();
   });
 
   it('renders tag pills from tag store', async () => {

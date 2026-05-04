@@ -12,19 +12,21 @@ interface MobileAnnotationSheetProps {
   topicId?: string;
 }
 
-export function MobileAnnotationSheet({pageUrl}: MobileAnnotationSheetProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function MobileAnnotationSheet({pageUrl, topicId: _topicId}: MobileAnnotationSheetProps) {
   const {selection, clear} = useTextSelection({
     containerSelector: 'article.prose',
     trigger: 'touch',
   });
   const tags = useTagStore((s) => s.tags);
   const addAnnotation = useAnnotationStore((s) => s.addAnnotation);
+  // Used by Task 7 for click-outside detection and drag-to-dismiss
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
 
   const visible = selection !== null;
-  const shouldRender = useDelayedUnmount(visible, 160);
+  const shouldRender = useDelayedUnmount(visible, 180);
 
   // Reset per-selection UI state when a new selection arrives
   useEffect(() => {
@@ -62,7 +64,7 @@ export function MobileAnnotationSheet({pageUrl}: MobileAnnotationSheetProps) {
         'fixed inset-x-0 bottom-0',
         'rounded-t-2xl border-t border-[var(--color-rule)] bg-[var(--color-card)]',
         'shadow-[0_-8px_32px_rgba(0,0,0,0.32)]',
-        'transition-transform duration-180 ease-out',
+        'transition-transform duration-[180ms] ease-out',
         visible ? 'translate-y-0' : 'translate-y-full',
       ].join(' ')}
       style={{
@@ -75,20 +77,10 @@ export function MobileAnnotationSheet({pageUrl}: MobileAnnotationSheetProps) {
         {/* Drag handle */}
         <div className="mx-auto w-8 h-[3px] bg-[var(--color-rule)] rounded-full" />
 
-        {/* Selected-text excerpt.
-            The text is split across two inline spans so that getNodeText on
-            any single DOM element never reconstructs the full phrase — the
-            article.prose node in the live DOM already provides the canonical
-            text match for tests. */}
-        {(() => {
-          const raw = selection?.text ?? '';
-          const mid = Math.ceil(raw.length / 2);
-          return (
-            <div className="border-l-2 border-[var(--color-rule)] pl-2 italic text-[11px] text-[var(--color-muted-foreground)] line-clamp-2">
-              {'"'}<span>{raw.slice(0, mid)}</span><span>{raw.slice(mid)}</span>{'"'}
-            </div>
-          );
-        })()}
+        {/* Selected-text excerpt */}
+        <div className="border-l-2 border-[var(--color-rule)] pl-2 italic text-[11px] text-[var(--color-muted-foreground)] line-clamp-2">
+          {'"'}<span>{selection?.text ?? ''}</span>{'"'}
+        </div>
 
         {/* Tag pills (horizontal scroll) */}
         <div className="flex gap-1.5 overflow-x-auto pb-1" style={{WebkitOverflowScrolling: 'touch'}}>
