@@ -7,6 +7,7 @@ import {useDelayedUnmount} from '@/lib/useDelayedUnmount';
 import {useClickOutside} from '@/lib/useClickOutside';
 import {buildAnchorContext} from '@/lib/highlights';
 import {Z} from '@/lib/zIndex';
+import {useBodyScrollLock} from '@/lib/useBodyScrollLock';
 
 interface MobileAnnotationSheetProps {
   pageUrl: string;
@@ -32,6 +33,7 @@ export function MobileAnnotationSheet({pageUrl, topicId: _topicId}: MobileAnnota
   const noteInputRef = useRef<HTMLInputElement>(null);
 
   const visible = selection !== null;
+  useBodyScrollLock(visible);
   const shouldRender = useDelayedUnmount(visible, 180);
 
   useClickOutside(sheetRef, clear, {deferArm: true});

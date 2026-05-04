@@ -4,6 +4,7 @@ import {useTagStore} from '@/store/tagStore';
 import {useAnnotationStore} from '@/store/annotationStore';
 import {useDocStore, type Doc} from '@/store/docStore';
 import {Search, FileText, Tag} from 'lucide-react';
+import {useBodyScrollLock} from '@/lib/useBodyScrollLock';
 
 type Result = {
   type: 'doc' | 'highlight';
@@ -34,6 +35,7 @@ interface CommandPaletteProps {
 }
 
 export function CommandPalette({open, onClose}: CommandPaletteProps) {
+  useBodyScrollLock(open);
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Result[]>([]);
