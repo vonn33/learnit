@@ -8,7 +8,7 @@ beforeEach(() => {
 describe('useWorkspaceStore', () => {
   it('starts with default state', () => {
     const state = useWorkspaceStore.getState();
-    expect(state.mode).toBe('split');
+    expect(state.mode).toBe('focus-left');
     expect(state.splitPercent).toBe(40);
     expect(state.sidebarCollapsed).toBe(false);
   });
@@ -33,18 +33,18 @@ describe('useWorkspaceStore', () => {
     useWorkspaceStore.getState().setSidebarCollapsed(true);
     useWorkspaceStore.getState().reset();
     const state = useWorkspaceStore.getState();
-    expect(state.mode).toBe('split');
+    expect(state.mode).toBe('focus-left');
     expect(state.sidebarCollapsed).toBe(false);
   });
 
   it('starts with map and staging inbox shown by default', () => {
     const state = useWorkspaceStore.getState();
-    expect(state.showMap).toBe(true);
+    expect(state.showMap).toBe(false);
     expect(state.showStagingInbox).toBe(true);
   });
 
   it('starts with split as default layout', () => {
-    expect(useWorkspaceStore.getState().defaultLayout).toBe('split');
+    expect(useWorkspaceStore.getState().defaultLayout).toBe('reader-only');
   });
 
   it('setShowMap toggles map visibility', () => {
@@ -69,9 +69,9 @@ describe('useWorkspaceStore', () => {
     s.setDefaultLayout('map-only');
     s.reset();
     const after = useWorkspaceStore.getState();
-    expect(after.showMap).toBe(true);
+    expect(after.showMap).toBe(false);
     expect(after.showStagingInbox).toBe(true);
-    expect(after.defaultLayout).toBe('split');
+    expect(after.defaultLayout).toBe('reader-only');
   });
 
   it('starts with showToc true by default', () => {

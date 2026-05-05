@@ -1,24 +1,9 @@
 import {Link, useLocation} from 'react-router';
-import {Sun, Moon, Monitor, Tag, GitBranch, Settings, Search, Library} from 'lucide-react';
-import {useHandbookStore} from '@/store';
-
-type Theme = 'dark' | 'light' | 'system';
-
-const THEME_ICONS: Record<Theme, React.ReactNode> = {
-  dark: <Moon size={14} />,
-  light: <Sun size={14} />,
-  system: <Monitor size={14} />,
-};
+import {Tag, GitBranch, Settings, Search, Library} from 'lucide-react';
+import {QuickSettingsPopover} from '@/components/ui/QuickSettingsPopover';
 
 export function Navbar({onSearchOpen}: {onSearchOpen: () => void}) {
-  const {theme, setTheme} = useHandbookStore();
   const location = useLocation();
-
-  function cycleTheme() {
-    const order: Theme[] = ['dark', 'light', 'system'];
-    const next = order[(order.indexOf(theme as Theme) + 1) % order.length];
-    setTheme(next);
-  }
 
   const navLinks = [
     {to: '/manage', icon: <Library size={13} />, label: 'Library'},
@@ -92,14 +77,7 @@ export function Navbar({onSearchOpen}: {onSearchOpen: () => void}) {
 
       <span aria-hidden className="hidden md:block w-px h-5 bg-[var(--color-border)] mx-1" />
 
-      <button
-        onClick={cycleTheme}
-        className="p-1.5 rounded-md text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-accent)] transition-colors"
-        aria-label={`Theme: ${theme}`}
-        title={`Theme: ${theme}`}
-      >
-        {THEME_ICONS[theme as Theme] ?? THEME_ICONS.dark}
-      </button>
+      <QuickSettingsPopover />
     </header>
   );
 }

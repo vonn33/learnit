@@ -1,11 +1,20 @@
 import {useRef, useState} from 'react';
 import {useHandbookStore} from '@/store';
 import {downloadExport, importData} from '@/lib/exportImport';
-import {Sun, Moon, Monitor, Download, Upload, Trash2, BookOpen, Columns2, FileText, Network} from 'lucide-react';
+import {Sun, Moon, Monitor, Download, Upload, Trash2, BookOpen, Columns2, FileText, Network, Type, RotateCcw} from 'lucide-react';
 import { useAnnotationStore } from '@/store/annotationStore';
 import { useMapStore } from '@/store/mapStore';
 import { useWorkspaceStore, type DefaultLayout } from '@/store/workspaceStore';
 import { supabase } from '@/lib/supabase';
+import {
+  useReaderStore,
+  type FontFace,
+  type FontSize,
+  type FontWeight,
+  type LineSpacing,
+  type ReadingWidth,
+  type PaperTint,
+} from '@/store/readerStore';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -21,6 +30,30 @@ const LAYOUT_OPTIONS: {value: DefaultLayout; icon: React.ReactNode; label: strin
   {value: 'map-only', icon: <Network size={15} />, label: 'Map only', desc: 'Full-width concept map'},
 ];
 
+const FONT_FACES: {value: FontFace; label: string}[] = [
+  {value: 'newsreader', label: 'Newsreader'},
+  {value: 'iowan', label: 'Iowan / Georgia'},
+  {value: 'recursive-sans', label: 'Recursive Sans'},
+];
+
+const FONT_SIZES: FontSize[] = ['xs', 's', 'm', 'l', 'xl'];
+
+const FONT_WEIGHTS: FontWeight[] = ['light', 'regular', 'medium'];
+
+const LINE_SPACINGS: LineSpacing[] = ['tight', 'normal', 'loose'];
+
+const READING_WIDTHS: ReadingWidth[] = ['narrow', 'medium', 'wide'];
+
+const PAPER_TINTS: {value: PaperTint; label: string; swatch: string}[] = [
+  {value: 'default', label: 'Default', swatch: 'var(--color-background)'},
+  {value: 'vellum', label: 'Vellum', swatch: 'oklch(0.96 0.022 80)'},
+  {value: 'cream', label: 'Cream', swatch: 'oklch(0.965 0.028 95)'},
+  {value: 'slate', label: 'Slate', swatch: 'oklch(0.95 0.012 240)'},
+];
+
+const PREVIEW_TEXT =
+  'In the long, slow, golden afternoon of a half-forgotten library, the reader settles into the chair and turns one careful page after another. The light shifts; the room exhales; the words cohere into something the eye can return to.';
+
 export function SettingsPage() {
   const {theme, setTheme} = useHandbookStore();
   const defaultLayout = useWorkspaceStore((s) => s.defaultLayout);
@@ -30,6 +63,7 @@ export function SettingsPage() {
   const setMode = useWorkspaceStore((s) => s.setMode);
   const setShowMap = useWorkspaceStore((s) => s.setShowMap);
   const setShowStagingInbox = useWorkspaceStore((s) => s.setShowStagingInbox);
+  const reader = useReaderStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge');
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -70,6 +104,7 @@ export function SettingsPage() {
     // Clear local UI prefs
     localStorage.removeItem('handbook:ui');
     localStorage.removeItem('learnit-workspace');
+    localStorage.removeItem('learnit-reader');
 
     window.location.reload();
   }
@@ -145,6 +180,188 @@ export function SettingsPage() {
               {label}
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* Reading */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-muted-foreground)]">Reading</h2>
+          <button
+            onClick={() => reader.reset()}
+            className="flex items-center gap-1 text-[10px] smallcaps tracking-[0.1em] text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] transition-colors"
+          >
+            <RotateCcw size={11} />
+            Reset
+          </button>
+        </div>
+
+        <div className="rounded-xl border bg-[var(--color-card)] p-4 flex flex-col gap-4">
+          {/* Font face */}
+          <div>
+            <div className="text-xs text-[var(--color-muted-foreground)] mb-1.5">Font face</div>
+            <div className="flex gap-1.5 flex-wrap">
+              {FONT_FACES.map(({value, label}) => (
+                <button
+                  key={value}
+                  onClick={() => reader.setFontFace(value)}
+                  className={[
+                    'px-3 py-1.5 rounded-md border text-[12px] transition-colors',
+                    reader.fontFace === value
+                      ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border-transparent'
+                      : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]',
+                  ].join(' ')}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Size */}
+          <div>
+            <div className="text-xs text-[var(--color-muted-foreground)] mb-1.5">Size</div>
+            <div className="flex gap-1.5">
+              {FONT_SIZES.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => reader.setFontSize(s)}
+                  className={[
+                    'flex-1 px-2 py-1.5 rounded-md border text-[11px] uppercase tracking-wide transition-colors',
+                    reader.fontSize === s
+                      ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border-transparent'
+                      : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]',
+                  ].join(' ')}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Weight */}
+          <div>
+            <div className="text-xs text-[var(--color-muted-foreground)] mb-1.5">Weight</div>
+            <div className="flex gap-1.5">
+              {FONT_WEIGHTS.map((w) => (
+                <button
+                  key={w}
+                  onClick={() => reader.setFontWeight(w)}
+                  className={[
+                    'flex-1 px-2 py-1.5 rounded-md border text-[12px] capitalize transition-colors',
+                    reader.fontWeight === w
+                      ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border-transparent'
+                      : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]',
+                  ].join(' ')}
+                >
+                  {w}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Line spacing */}
+          <div>
+            <div className="text-xs text-[var(--color-muted-foreground)] mb-1.5">Line spacing</div>
+            <div className="flex gap-1.5">
+              {LINE_SPACINGS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => reader.setLineSpacing(s)}
+                  className={[
+                    'flex-1 px-2 py-1.5 rounded-md border text-[12px] capitalize transition-colors',
+                    reader.lineSpacing === s
+                      ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border-transparent'
+                      : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]',
+                  ].join(' ')}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Reading width */}
+          <div>
+            <div className="text-xs text-[var(--color-muted-foreground)] mb-1.5">Reading width</div>
+            <div className="flex gap-1.5">
+              {READING_WIDTHS.map((w) => (
+                <button
+                  key={w}
+                  onClick={() => reader.setReadingWidth(w)}
+                  className={[
+                    'flex-1 px-2 py-1.5 rounded-md border text-[12px] capitalize transition-colors',
+                    reader.readingWidth === w
+                      ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border-transparent'
+                      : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]',
+                  ].join(' ')}
+                >
+                  {w}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Paper tint */}
+          <div>
+            <div className="text-xs text-[var(--color-muted-foreground)] mb-1.5">Paper tint</div>
+            <div className="flex gap-2">
+              {PAPER_TINTS.map((t) => (
+                <button
+                  key={t.value}
+                  aria-label={t.label}
+                  title={t.label}
+                  onClick={() => reader.setPaperTint(t.value)}
+                  className={[
+                    'flex-1 h-9 rounded-md border-2 transition-colors',
+                    reader.paperTint === t.value
+                      ? 'border-[var(--color-primary)]'
+                      : 'border-[var(--color-border)] hover:border-[var(--color-rule)]',
+                  ].join(' ')}
+                  style={{background: t.swatch}}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Justify */}
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <div className="text-sm text-[var(--color-foreground)]">Justified text</div>
+              <div className="text-xs text-[var(--color-muted-foreground)]">Even right edge; may produce uneven word spacing on narrow widths.</div>
+            </div>
+            <input
+              type="checkbox"
+              checked={reader.justify}
+              onChange={(e) => reader.setJustify(e.target.checked)}
+              className="h-4 w-4 cursor-pointer"
+            />
+          </label>
+
+          {/* Hyphenate */}
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <div className="text-sm text-[var(--color-foreground)]">Hyphenation</div>
+              <div className="text-xs text-[var(--color-muted-foreground)]">Break long words across lines for tighter justification.</div>
+            </div>
+            <input
+              type="checkbox"
+              checked={reader.hyphenate}
+              onChange={(e) => reader.setHyphenate(e.target.checked)}
+              className="h-4 w-4 cursor-pointer"
+            />
+          </label>
+        </div>
+
+        {/* Live preview */}
+        <div className="mt-3 rounded-xl border border-[var(--color-rule)] bg-[var(--color-background)] p-5">
+          <div className="flex items-center gap-1.5 text-[10px] smallcaps tracking-[0.1em] text-[var(--color-muted-foreground)] mb-2">
+            <Type size={11} />
+            Preview
+          </div>
+          <article className="prose">
+            <p>{PREVIEW_TEXT}</p>
+          </article>
         </div>
       </section>
 
